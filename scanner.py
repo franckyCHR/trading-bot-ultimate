@@ -38,15 +38,32 @@ PAIRS = [
     "USD/CHF",
     "AUD/USD",
     "USD/CAD",
-    # ── Croisés Forex ─────────────────────────────────
+    "NZD/USD",
+    # ── Mineurs (croisés sans USD) ────────────────────
     "EUR/GBP",
     "EUR/JPY",
+    "EUR/CHF",
+    "EUR/AUD",
+    "EUR/CAD",
+    "EUR/NZD",
     "GBP/JPY",
+    "GBP/CHF",
+    "GBP/AUD",
+    "GBP/CAD",
+    "GBP/NZD",
+    "AUD/JPY",
+    "AUD/CAD",
+    "AUD/NZD",
+    "NZD/JPY",
+    "CAD/JPY",
+    "CHF/JPY",
     # ── Matières premières ────────────────────────────
     "XAU/USD",   # Or (Gold)
+    "XAG/USD",   # Argent (Silver)
     # ── Indices ───────────────────────────────────────
     "DJ30",      # Dow Jones 30 (Futures YM=F)
     "DAX",       # DAX Allemand (^GDAXI)
+    "NAS100",    # Nasdaq 100
 ]
 
 TIMEFRAMES = ["15m", "30m", "1h", "4h"]
