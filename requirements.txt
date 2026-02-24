@@ -1,0 +1,45 @@
+# ══════════════════════════════════════════════════
+# TRADING BOT ULTIMATE — requirements.txt
+# Installe tout avec : pip install -r requirements.txt
+# ══════════════════════════════════════════════════
+
+# ── Données de marché ─────────────────────────────
+ccxt>=4.2.0                # Binance, Coinbase, Bybit, Kraken, etc.
+yfinance>=0.2.36           # Yahoo Finance (actions, forex, indices)
+
+# ── Calcul d'indicateurs ──────────────────────────
+pandas-ta>=0.3.14b0        # 130+ indicateurs : QQE, ADX, RSI, Bollinger...
+numpy>=1.26.0
+scipy>=1.12.0              # argrelextrema pour S/R detection
+pandas>=2.2.0
+
+# ── Détection de patterns ─────────────────────────
+# pandas-ta inclut déjà la détection de chandeliers
+# et de nombreux patterns via CDL functions
+
+# ── Visualisation & Graphiques ────────────────────
+mplfinance>=0.12.10b0      # Graphiques chandeliers professionnels
+plotly>=5.20.0             # Graphiques interactifs HTML
+matplotlib>=3.8.0
+
+# ── Alertes ───────────────────────────────────────
+requests>=2.31.0           # Telegram API
+
+# ── Utilitaires ───────────────────────────────────
+python-dotenv>=1.0.0       # Variables d'environnement (.env)
+schedule>=1.2.1            # Scheduler pour la boucle 15 min
+colorama>=0.4.6            # Couleurs dans le terminal
+tqdm>=4.66.0               # Barres de progression
+
+# ── Optionnel : TA-Lib (performances supérieures) ─
+# ta-lib                   # Nécessite installation système d'abord :
+#                          # Ubuntu : sudo apt install libta-lib-dev
+#                          # Mac    : brew install ta-lib
+#                          # Windows: pip install TA-Lib-precompiled
+
+# ── Optionnel : Jupyter pour analyse ──────────────
+# jupyter
+# ipywidgets
+
+# ── Interface Web ──────────────────────────────────
+Flask>=3.0.0               # Serveur web (interface en ligne)

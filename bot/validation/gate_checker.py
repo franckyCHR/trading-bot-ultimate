@@ -1,0 +1,192 @@
+"""
+gate_checker.py
+───────────────
+Les 2 portes obligatoires du bot.
+Si une porte est fermée → STOP TOTAL, aucun signal émis.
+Ce fichier ne peut pas être contourné dans le pipeline.
+"""
+
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class GateResult:
+    allowed      : bool
+    reason       : str
+    gate1_sr     : bool = False   # Zone S/R identifiée
+    gate2_figure : bool = False   # Figure ou reversal confirmé
+    adx_ok       : bool = False   # ADX momentum valide
+    qqe_ok       : bool = False   # QQE croisement aligné
+    compression  : bool = False   # Zone de compression présente
+    warnings     : list = None    # Avertissements non bloquants
+
+    def __post_init__(self):
+        if self.warnings is None:
+            self.warnings = []
+
+
+class GateChecker:
+    """
+    Vérifie toutes les conditions dans l'ordre séquentiel.
+    Les portes 1 et 2 sont BLOQUANTES.
+    Les autres génèrent des avertissements.
+    """
+
+    def check(self, signal: dict) -> GateResult:
+
+        warnings = []
+
+        # ══════════════════════════════════════════════
+        # PORTE 1 — Zone S/R identifiée
+        # ══════════════════════════════════════════════
+        has_sr = bool(signal.get("sr_zone"))
+        sr_strength = signal.get("sr_strength", 0)
+
+        if not has_sr:
+            return GateResult(
+                allowed      = False,
+                reason       = "❌ PORTE 1 FERMÉE — Aucune zone S/R identifiée. Pas de trade.",
+                gate1_sr     = False,
+                gate2_figure = False,
+            )
+
+        if sr_strength < 1:
+            warnings.append("⚠️ Zone S/R faible (moins de 2 touches)")
+
+        # ══════════════════════════════════════════════
+        # PORTE 2 — Figure chartiste OU reversal candle
+        # ══════════════════════════════════════════════
+        has_pattern  = bool(signal.get("pattern"))
+        has_reversal = bool(signal.get("reversal_candle"))
+        pattern_clarity = signal.get("pattern_clarity", 0)
+
+        if not has_pattern and not has_reversal:
+            return GateResult(
+                allowed      = False,
+                reason       = "❌ PORTE 2 FERMÉE — Aucune figure ni reversal candle confirmé. Pas de trade.",
+                gate1_sr     = True,
+                gate2_figure = False,
+            )
+
+        if has_pattern and pattern_clarity < 2:
+            return GateResult(
+                allowed      = False,
+                reason       = f"❌ PORTE 2 FERMÉE — Figure '{signal.get('pattern')}' trop floue (clarté {pattern_clarity}/3). Pas de trade.",
+                gate1_sr     = True,
+                gate2_figure = False,
+            )
+
+        if has_pattern and has_reversal:
+            warnings.append("✅ BONUS — Figure chartiste ET reversal candle sur la même zone")
+
+        # ══════════════════════════════════════════════
+        # FILTRE 3 — ADX momentum (non bloquant)
+        # ══════════════════════════════════════════════
+        adx_value   = signal.get("adx", 0)
+        adx_ok      = adx_value >= 20
+        di_plus     = signal.get("di_plus", 0)
+        di_minus    = signal.get("di_minus", 0)
+        direction   = signal.get("direction", "NEUTRE")
+
+        if not adx_ok:
+            warnings.append(f"⚠️ ADX faible ({round(adx_value, 1)}) — momentum insuffisant")
+        elif direction == "LONG" and di_plus < di_minus:
+            warnings.append(f"⚠️ ADX OK mais -DI dominant ({round(di_minus,1)} > {round(di_plus,1)}) — momentum baissier")
+            adx_ok = False
+        elif direction == "SHORT" and di_minus < di_plus:
+            warnings.append(f"⚠️ ADX OK mais +DI dominant ({round(di_plus,1)} > {round(di_minus,1)}) — momentum haussier")
+            adx_ok = False
+        else:
+            rising = signal.get("adx_rising", False)
+            adx_label = f"ADX: {round(adx_value,1)}{'↑' if rising else ''} ✅"
+            warnings.append(adx_label)
+
+        # ══════════════════════════════════════════════
+        # FILTRE 4 — QQE croisement (non bloquant)
+        # ══════════════════════════════════════════════
+        qqe_fast      = signal.get("qqe_fast", 0)
+        qqe_slow      = signal.get("qqe_slow", 0)
+        qqe_fast_prev = signal.get("qqe_fast_prev", 0)
+        qqe_slow_prev = signal.get("qqe_slow_prev", 0)
+        qqe_bars_ago  = signal.get("qqe_cross_bars_ago", 99)
+
+        cross_bull = (qqe_fast > qqe_slow) and (qqe_fast_prev <= qqe_slow_prev)
+        cross_bear = (qqe_fast < qqe_slow) and (qqe_fast_prev >= qqe_slow_prev)
+
+        if direction == "LONG":
+            qqe_ok = qqe_fast > qqe_slow
+            if cross_bull:
+                warnings.append("QQE: croisement haussier frais ✅✅")
+            elif qqe_ok and qqe_bars_ago <= 6:
+                warnings.append(f"QQE: haussier il y a {qqe_bars_ago} bougies ✅")
+            elif qqe_ok:
+                warnings.append(f"QQE: haussier mais croisement vieux ({qqe_bars_ago} bougies) ⚠️")
+            else:
+                warnings.append("QQE: baissier ❌ — momentum court terme contre le trade")
+                qqe_ok = False
+        elif direction == "SHORT":
+            qqe_ok = qqe_fast < qqe_slow
+            if cross_bear:
+                warnings.append("QQE: croisement baissier frais ✅✅")
+            elif qqe_ok and qqe_bars_ago <= 6:
+                warnings.append(f"QQE: baissier il y a {qqe_bars_ago} bougies ✅")
+            elif qqe_ok:
+                warnings.append(f"QQE: baissier mais croisement vieux ({qqe_bars_ago} bougies) ⚠️")
+            else:
+                warnings.append("QQE: haussier ❌ — momentum court terme contre le trade")
+                qqe_ok = False
+        else:
+            qqe_ok = False
+
+        # ══════════════════════════════════════════════
+        # FILTRE 5 — Zone de compression (bonus)
+        # ══════════════════════════════════════════════
+        has_compression = bool(signal.get("compression_zone"))
+        if has_compression:
+            warnings.append("🔥 COMPRESSION EXPLOSIVE — énergie accumulée")
+
+        # ══════════════════════════════════════════════
+        # FILTRE 6 — Avertissements psychologiques
+        # ══════════════════════════════════════════════
+        trades_today = signal.get("trades_today", 0)
+        if trades_today >= 3:
+            warnings.append("⚠️ PSYCHO — 3 trades déjà pris aujourd'hui")
+
+        loss_today = signal.get("loss_on_pair_today", False)
+        if loss_today:
+            warnings.append("⚠️ PSYCHO — Perte déjà prise sur cette paire aujourd'hui")
+
+        session_ok = signal.get("active_session", True)
+        if not session_ok:
+            warnings.append("⚠️ PSYCHO — En dehors des sessions London/NY")
+
+        # ══════════════════════════════════════════════
+        # RÉSULTAT FINAL
+        # ══════════════════════════════════════════════
+        confluence_score = sum([
+            has_sr,
+            has_pattern or has_reversal,
+            has_pattern and has_reversal,   # bonus
+            adx_ok,
+            qqe_ok,
+            has_compression,
+        ])
+
+        if confluence_score >= 5:
+            status = "🔥 SIGNAL FORT"
+        elif confluence_score >= 3:
+            status = "✅ SIGNAL VALIDE"
+        else:
+            status = "⚠️ SIGNAL FAIBLE — surveiller"
+
+        return GateResult(
+            allowed      = True,
+            reason       = f"{status} — confluence {confluence_score}/6",
+            gate1_sr     = True,
+            gate2_figure = True,
+            adx_ok       = adx_ok,
+            qqe_ok       = qqe_ok,
+            compression  = has_compression,
+            warnings     = warnings,
+        )

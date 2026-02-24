@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Bot Ultimate</title>
+<style>
+/* ── Reset ──────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Consolas', 'Courier New', monospace;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.header {
+  text-align: center;
+  padding: 20px 0 16px;
+  border-bottom: 1px solid #30363d;
+  margin-bottom: 20px;
+}
+.header h1 { font-size: 22px; color: #58a6ff; letter-spacing: 1px; }
+.header .sub { color: #8b949e; font-size: 12px; margin-top: 5px; }
+
+/* ── Panel ──────────────────────────────────────────── */
+.panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 0 auto 16px;
+  max-width: 860px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.row:last-child { margin-bottom: 0; }
+
+.lbl { color: #8b949e; font-size: 12px; min-width: 56px; }
+
+select {
+  background: #0d1117;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 170px;
+}
+select:focus { outline: none; border-color: #58a6ff; }
+
+.tf-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.tf-lbl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 13px;
+  cursor: pointer;
+  font-size: 12px;
+  user-select: none;
+  transition: border-color .15s, background .15s;
+}
+.tf-lbl input { display: none; }
+.tf-lbl.on { border-color: #58a6ff; background: #1c2d45; color: #58a6ff; }
+
+#scan-btn {
+  background: #238636;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background .2s;
+  margin-top: 6px;
+}
+#scan-btn:hover:not(:disabled) { background: #2ea043; }
+#scan-btn:disabled { background: #3a3a3a; color: #666; cursor: not-allowed; }
+#scan-btn.running { background: #9e6a03; }
+
+#badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #21262d;
+  color: #8b949e;
+  margin-left: 10px;
+  display: none;
+}
+#badge.running { background: #1f3a5f; color: #58a6ff; display: inline; }
+#badge.done    { background: #1a3a1a; color: #3fb950; display: inline; }
+#badge.error   { background: #3a1a1a; color: #f85149; display: inline; }
+
+/* ── Logs ───────────────────────────────────────────── */
+.log-wrap {
+  max-width: 860px;
+  margin: 0 auto 16px;
+}
+.section-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.section-hdr h3 {
+  font-size: 11px;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.clr-btn {
+  background: none;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  padding: 2px 9px;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.clr-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+
+#logs {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px;
+  height: 160px;
+  overflow-y: auto;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.li  { color: #8b949e; }
+.lw  { color: #e3b341; }
+.le  { color: #f85149; }
+.ls  { color: #3fb950; font-weight: bold; }
+.lx  { color: #58a6ff; font-style: italic; }
+
+/* ── Results ────────────────────────────────────────── */
+.res-wrap { max-width: 1060px; margin: 0 auto; }
+.res-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.res-hdr h2 { font-size: 15px; }
+#cnt {
+  background: #1f3a5f;
+  color: #58a6ff;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.tbl-scroll { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+thead th {
+  background: #161b22;
+  color: #8b949e;
+  text-align: left;
+  padding: 9px 11px;
+  border-bottom: 1px solid #30363d;
+  font-weight: normal;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: .5px;
+  white-space: nowrap;
+}
+tbody tr { border-bottom: 1px solid #21262d; }
+tbody tr:hover { background: #161b22; }
+tbody td { padding: 9px 11px; vertical-align: middle; white-space: nowrap; }
+
+.dL { background:#1a3a1a; color:#3fb950; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:bold; }
+.dS { background:#3a1a1a; color:#f85149; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:bold; }
+
+.pe { color: #58a6ff; font-weight: bold; }
+.ps { color: #f85149; }
+.pt1{ color: #e3b341; }
+.pt2{ color: #3fb950; }
+.prr{ color: #8b949e; }
+
+.pine-btn {
+  background: #1f3a5f;
+  color: #58a6ff;
+  border: 1px solid #1f3a5f;
+  padding: 3px 9px;
+  font-size: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.pine-btn:hover { background: #2d5a8e; }
+.pine-btn.ok { background: #1a3a1a; color: #3fb950; border-color: #3fb950; }
+
+.empty {
+  text-align: center;
+  color: #8b949e;
+  padding: 50px;
+  font-size: 13px;
+}
+.empty .ico { font-size: 28px; margin-bottom: 8px; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0d1117; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>&#x1F916; Trading Bot Ultimate</h1>
+  <div class="sub">Scanner technique Forex — EUR/USD · GBP/USD · XAU/USD · DJ30 · DAX...</div>
+</div>
+
+<!-- Panel -->
+<div class="panel">
+  <div class="row">
+    <span class="lbl">Paire</span>
+    <select id="pair-sel">
+      <option value="">Toutes les paires</option>
+      {% for pair in pairs %}
+      <option value="{{ pair }}">{{ pair }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="row">
+    <span class="lbl">TF</span>
+    <div class="tf-group">
+      {% for tf in timeframes %}
+      <label class="tf-lbl on" id="tfl-{{ tf }}">
+        <input type="checkbox" value="{{ tf }}" checked onchange="toggleTF(this)">
+        {{ tf }}
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="row">
+    <button id="scan-btn" onclick="startScan()">&#x1F50D; Lancer le scan</button>
+    <span id="badge"></span>
+  </div>
+</div>
+
+<!-- Logs -->
+<div class="log-wrap">
+  <div class="section-hdr">
+    <h3>Logs en temps reel</h3>
+    <button class="clr-btn" onclick="clearLogs()">Effacer</button>
+  </div>
+  <div id="logs"><span class="lx">En attente du scan...</span></div>
+</div>
+
+<!-- Results -->
+<div class="res-wrap">
+  <div class="res-hdr">
+    <h2>Signaux detectes</h2>
+    <span id="cnt">0 signal</span>
+  </div>
+  <div class="tbl-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Paire</th><th>TF</th><th>Pattern</th><th>Direction</th>
+          <th>Entree</th><th>SL</th><th>TP1</th><th>TP2</th>
+          <th>RR</th><th>ADX</th><th>QQE</th><th>Pine</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="12"><div class="empty"><div class="ico">&#x1F50D;</div>Lance un scan pour voir les signaux</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let scanId = null, es = null, scanning = false;
+
+function toggleTF(cb) {
+  cb.parentElement.classList.toggle("on", cb.checked);
+}
+
+function getTFs() {
+  return [...document.querySelectorAll(".tf-group input:checked")].map(c => c.value);
+}
+
+function log(msg, cls) {
+  const d = document.getElementById("logs");
+  const s = document.createElement("span");
+  s.className = cls || classify(msg);
+  s.textContent = msg;
+  d.appendChild(s);
+  d.appendChild(document.createElement("br"));
+  d.scrollTop = d.scrollHeight;
+}
+
+function classify(m) {
+  if (m.includes("ERROR") || m.includes("Erreur")) return "le";
+  if (m.includes("WARNING")) return "lw";
+  if (m.includes("signal") || m.includes("✅") || m.includes("SIGNAL")) return "ls";
+  if (m.startsWith("[Sys]")) return "lx";
+  return "li";
+}
+
+function clearLogs() { document.getElementById("logs").innerHTML = ""; }
+
+function setBadge(state, txt) {
+  const b = document.getElementById("badge");
+  b.className = state; b.textContent = txt;
+}
+
+function resetBtn() {
+  scanning = false;
+  const b = document.getElementById("scan-btn");
+  b.disabled = false; b.textContent = "&#x1F50D; Lancer le scan"; b.classList.remove("running");
+}
+
+async function startScan() {
+  if (scanning) return;
+  const pair = document.getElementById("pair-sel").value;
+  const tfs  = getTFs();
+  if (!tfs.length) { alert("Selectionne au moins un timeframe !"); return; }
+
+  scanning = true;
+  const btn = document.getElementById("scan-btn");
+  btn.disabled = true; btn.textContent = "Scan en cours..."; btn.classList.add("running");
+  setBadge("running", "Scan en cours...");
+  clearLogs();
+  log("[Sys] Demarrage...", "lx");
+  clearTable();
+
+  try {
+    const r = await fetch("/api/scan", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ pairs: pair ? [pair] : [], timeframes: tfs })
+    });
+    const d = await r.json();
+    scanId = d.scan_id;
+    log(`[Sys] Scan ID : ${scanId}`, "lx");
+    openSSE(scanId);
+  } catch(e) {
+    log(`[Sys] Erreur reseau : ${e.message}`, "le");
+    resetBtn();
+  }
+}
+
+function openSSE(id) {
+  if (es) { es.close(); es = null; }
+  es = new EventSource(`/api/stream/${id}`);
+  es.onmessage = function(ev) {
+    const m = ev.data;
+    if (m === "__SCAN_DONE__") {
+      log("[Sys] Scan termine — chargement des signaux...", "lx");
+      es.close(); es = null;
+      fetchResults(id);
+    } else if (m !== "__HEARTBEAT__") {
+      log(m);
+    }
+  };
+  es.onerror = function() {
+    log("[Sys] Connexion perdue — recuperation des resultats...", "lw");
+    if (es) { es.close(); es = null; }
+    fetchResults(id);
+  };
+}
+
+async function fetchResults(id) {
+  try {
+    const r = await fetch(`/api/results/${id}`);
+    const d = await r.json();
+    if (d.status === "error") {
+      setBadge("error", "Erreur");
+      log(`[Sys] Erreur : ${d.error}`, "le");
+    } else {
+      setBadge("done", `${d.count} signal(s)`);
+      log(`[Sys] ${d.count} signal(s) detecte(s).`, "lx");
+      renderTable(d.signals);
+    }
+  } catch(e) {
+    log(`[Sys] Erreur chargement : ${e.message}`, "le");
+    setBadge("error", "Erreur");
+  } finally {
+    resetBtn();
+  }
+}
+
+function clearTable() {
+  document.getElementById("tbody").innerHTML =
+    `<tr><td colspan="12"><div class="empty"><div class="ico">&#x23F3;</div>Scan en cours...</div></td></tr>`;
+  document.getElementById("cnt").textContent = "0 signal";
+}
+
+function renderTable(sigs) {
+  document.getElementById("cnt").textContent = `${sigs.length} signal(s)`;
+  if (!sigs.length) {
+    document.getElementById("tbody").innerHTML =
+      `<tr><td colspan="12"><div class="empty"><div class="ico">&#x1F6AB;</div>Aucun signal sur cette selection</div></td></tr>`;
+    return;
+  }
+  document.getElementById("tbody").innerHTML = sigs.map(s => {
+    const dir = s.direction === "LONG"
+      ? `<span class="dL">LONG</span>`
+      : `<span class="dS">SHORT</span>`;
+    const comp = s.compression ? " &#x1F525;" : "";
+    const adx  = s.adx >= 20
+      ? `<span style="color:#56d364">${s.adx}</span>`
+      : `<span style="color:#8b949e">${s.adx}</span>`;
+    const qqe  = s.qqe_status.includes("✅") ? "✅" : "⚠️";
+    const pine = s.pine_file
+      ? `<button class="pine-btn" onclick="copyPine('${s.pine_file.split('/').pop()}',this)">Copier</button>`
+      : "—";
+    return `<tr>
+      <td><b>${s.pair}</b></td>
+      <td>${s.timeframe}</td>
+      <td>${s.pattern}${comp}</td>
+      <td>${dir}</td>
+      <td class="pe">${s.entry}</td>
+      <td class="ps">${s.sl}</td>
+      <td class="pt1">${s.tp1}</td>
+      <td class="pt2">${s.tp2}</td>
+      <td class="prr">1:${s.rr_ratio}</td>
+      <td>${adx}</td>
+      <td>${qqe}</td>
+      <td>${pine}</td>
+    </tr>`;
+  }).join("");
+}
+
+async function copyPine(name, btn) {
+  try {
+    const r = await fetch(`/pine/${name}`);
+    if (!r.ok) { alert("Fichier Pine introuvable."); return; }
+    await navigator.clipboard.writeText(await r.text());
+    btn.textContent = "Copie!"; btn.classList.add("ok");
+    setTimeout(() => { btn.textContent = "Copier"; btn.classList.remove("ok"); }, 2000);
+  } catch(e) { alert("Erreur : " + e.message); }
+}
+</script>
+</body>
+</html>

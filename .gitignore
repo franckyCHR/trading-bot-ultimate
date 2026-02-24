@@ -1,0 +1,26 @@
+# ── Secrets ───────────────────────────────────────
+.env
+
+# ── Environnement Python ──────────────────────────
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# ── Fichiers générés par le bot ───────────────────
+outputs/bot.log
+outputs/signals_log.json
+outputs/dashboard.html
+outputs/tradingview/
+outputs/mt4/
+
+# ── macOS ─────────────────────────────────────────
+.DS_Store
+
+# ── Divers ────────────────────────────────────────
+files.zip
+*.zip
