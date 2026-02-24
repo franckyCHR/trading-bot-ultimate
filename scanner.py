@@ -200,6 +200,7 @@ def run_scan(pairs_override=None, tfs_override=None):
                         continue
 
                     # 7. Calcul des niveaux d'entrée
+                    sig["confluence"] = gate_result.reason
                     entry_result = calc.calculate(sig)
                     sig.update({
                         "entry"    : entry_result.entry,

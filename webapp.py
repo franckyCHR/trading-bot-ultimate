@@ -200,6 +200,7 @@ def get_results(scan_id: str):
             "pine_file"  : s.get("pine_file", ""),
             "zone_high"  : round(float(s.get("zone_high") or s.get("resistance_level") or s.get("tp2") or 0), 5),
             "zone_low"   : round(float(s.get("zone_low")  or s.get("support_level")   or s.get("sl")  or 0), 5),
+            "confluence" : s.get("confluence", ""),
         })
 
     return jsonify({
