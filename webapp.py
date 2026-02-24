@@ -211,6 +211,46 @@ def get_results(scan_id: str):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# API — DONNÉES OHLCV POUR GRAPHIQUE
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/chart")
+def get_chart_data():
+    """
+    Retourne les bougies OHLCV d'une paire/TF pour le graphique.
+    Params : ?pair=EUR/USD&timeframe=1h
+    """
+    pair      = request.args.get("pair", "EUR/USD")
+    timeframe = request.args.get("timeframe", "1h")
+
+    from bot.data.market_feed import MarketFeed
+    feed = MarketFeed(exchange_id="forex")
+    df   = feed.get_ohlcv(pair, timeframe, limit=200)
+
+    if df is None or df.empty:
+        return jsonify({"error": "Données indisponibles"}), 404
+
+    candles = []
+    for _, row in df.iterrows():
+        ts = row["timestamp"]
+        # Lightweight Charts attend un timestamp Unix (secondes)
+        if hasattr(ts, "timestamp"):
+            t = int(ts.timestamp())
+        else:
+            import pandas as pd
+            t = int(pd.Timestamp(ts).timestamp())
+        candles.append({
+            "time" : t,
+            "open" : round(float(row["open"]),  5),
+            "high" : round(float(row["high"]),  5),
+            "low"  : round(float(row["low"]),   5),
+            "close": round(float(row["close"]), 5),
+        })
+
+    return jsonify({"pair": pair, "timeframe": timeframe, "candles": candles})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # FICHIERS PINE SCRIPT
 # ══════════════════════════════════════════════════════════════════════════════
 
