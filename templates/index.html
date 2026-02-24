@@ -451,7 +451,7 @@ function renderTable(sigs) {
     const pine = s.pine_file
       ? `<button class="pine-btn" onclick="copyPine('${s.pine_file.split('/').pop()}',this)">Copier</button>`
       : "—";
-    return `<tr style="cursor:pointer" onclick="showChart('${s.pair}','${s.timeframe}',${s.entry},${s.sl},${s.tp1},${s.tp2})">
+    return `<tr style="cursor:pointer" onclick="showChart('${s.pair}','${s.timeframe}',${s.entry},${s.sl},${s.tp1},${s.tp2},'${s.pattern}',${s.zone_high},${s.zone_low},'${s.direction}')">
       <td><b>${s.pair}</b></td>
       <td>${s.timeframe}</td>
       <td>${s.pattern}${comp}</td>
@@ -470,7 +470,7 @@ function renderTable(sigs) {
 
 let chartInstance = null;
 
-function showChart(pair, tf, entry, sl, tp1, tp2) {
+function showChart(pair, tf, entry, sl, tp1, tp2, pattern, zoneHigh, zoneLow, direction) {
   const section = document.getElementById("chart-section");
   section.style.display = "block";
   section.scrollIntoView({ behavior: "smooth" });
@@ -507,10 +507,26 @@ function showChart(pair, tf, entry, sl, tp1, tp2) {
       });
       series.setData(d.candles);
 
+      // ── Lignes ENTRY / SL / TP ─────────────────────────────────────────
       series.createPriceLine({ price: entry, color: "#58a6ff", lineWidth: 2, lineStyle: 0, title: "ENTRY" });
       series.createPriceLine({ price: sl,    color: "#f85149", lineWidth: 1, lineStyle: 1, title: "SL"    });
       series.createPriceLine({ price: tp1,   color: "#e3b341", lineWidth: 1, lineStyle: 1, title: "TP1"   });
       series.createPriceLine({ price: tp2,   color: "#3fb950", lineWidth: 1, lineStyle: 1, title: "TP2"   });
+
+      // ── Zone de la figure (rectangle pointillé coloré) ─────────────────
+      if (zoneHigh > 0 && zoneLow > 0 && zoneHigh !== zoneLow) {
+        const isLong      = direction === "LONG";
+        const borderColor = isLong ? "#3fb950" : "#f85149";
+        const label       = pattern || "Zone";
+        series.createPriceLine({
+          price: zoneHigh, color: borderColor, lineWidth: 2,
+          lineStyle: 2,    title: `▲ ${label}`
+        });
+        series.createPriceLine({
+          price: zoneLow,  color: borderColor, lineWidth: 2,
+          lineStyle: 2,    title: "▼ Zone"
+        });
+      }
 
       chartInstance.timeScale().fitContent();
     })

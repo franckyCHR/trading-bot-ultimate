@@ -198,6 +198,8 @@ def get_results(scan_id: str):
             "htf_label"  : s.get("htf_label", ""),
             "timestamp"  : s.get("timestamp", ""),
             "pine_file"  : s.get("pine_file", ""),
+            "zone_high"  : round(float(s.get("zone_high") or s.get("resistance_level") or s.get("tp2") or 0), 5),
+            "zone_low"   : round(float(s.get("zone_low")  or s.get("support_level")   or s.get("sl")  or 0), 5),
         })
 
     return jsonify({

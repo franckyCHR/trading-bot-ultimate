@@ -29,7 +29,7 @@ class GateResult:
 class GateChecker:
     """
     Vérifie toutes les conditions dans l'ordre séquentiel.
-    Les portes 1 et 2 sont BLOQUANTES.
+    Les portes 1, 2, 3 et 4 sont BLOQUANTES.
     Les autres génèrent des avertissements.
     """
 
@@ -81,63 +81,85 @@ class GateChecker:
             warnings.append("✅ BONUS — Figure chartiste ET reversal candle sur la même zone")
 
         # ══════════════════════════════════════════════
-        # FILTRE 3 — ADX momentum (non bloquant)
+        # GATE 3 — ADX momentum (BLOQUANT)
         # ══════════════════════════════════════════════
-        adx_value   = signal.get("adx", 0)
-        adx_ok      = adx_value >= 20
-        di_plus     = signal.get("di_plus", 0)
-        di_minus    = signal.get("di_minus", 0)
-        direction   = signal.get("direction", "NEUTRE")
+        adx_value = float(signal.get("adx", 0))
+        di_plus   = float(signal.get("di_plus", 0))
+        di_minus  = float(signal.get("di_minus", 0))
+        direction = signal.get("direction", "NEUTRE")
+
+        adx_ok = adx_value >= 20
+        di_ok  = (di_plus >= di_minus) if direction == "LONG" else (di_minus >= di_plus)
 
         if not adx_ok:
-            warnings.append(f"⚠️ ADX faible ({round(adx_value, 1)}) — momentum insuffisant")
-        elif direction == "LONG" and di_plus < di_minus:
-            warnings.append(f"⚠️ ADX OK mais -DI dominant ({round(di_minus,1)} > {round(di_plus,1)}) — momentum baissier")
-            adx_ok = False
-        elif direction == "SHORT" and di_minus < di_plus:
-            warnings.append(f"⚠️ ADX OK mais +DI dominant ({round(di_plus,1)} > {round(di_minus,1)}) — momentum haussier")
-            adx_ok = False
-        else:
-            rising = signal.get("adx_rising", False)
-            adx_label = f"ADX: {round(adx_value,1)}{'↑' if rising else ''} ✅"
-            warnings.append(adx_label)
+            return GateResult(
+                allowed      = False,
+                reason       = f"❌ GATE 3 FERMÉE — ADX {adx_value:.1f} < 20 — momentum insuffisant",
+                gate1_sr     = True,
+                gate2_figure = True,
+                warnings     = warnings,
+            )
+
+        if not di_ok:
+            dominant = f"-DI {di_minus:.1f}" if direction == "LONG" else f"+DI {di_plus:.1f}"
+            return GateResult(
+                allowed      = False,
+                reason       = f"❌ GATE 3 FERMÉE — DI inversé ({dominant} dominant) — momentum contre le trade",
+                gate1_sr     = True,
+                gate2_figure = True,
+                warnings     = warnings,
+            )
+
+        rising = signal.get("adx_rising", False)
+        warnings.append(f"ADX: {round(adx_value,1)}{'↑' if rising else ''} ✅")
 
         # ══════════════════════════════════════════════
-        # FILTRE 4 — QQE croisement (non bloquant)
+        # GATE 4 — QQE croisement récent (BLOQUANT)
         # ══════════════════════════════════════════════
-        qqe_fast      = signal.get("qqe_fast", 0)
-        qqe_slow      = signal.get("qqe_slow", 0)
-        qqe_fast_prev = signal.get("qqe_fast_prev", 0)
-        qqe_slow_prev = signal.get("qqe_slow_prev", 0)
-        qqe_bars_ago  = signal.get("qqe_cross_bars_ago", 99)
+        qqe_fast      = float(signal.get("qqe_fast", 0))
+        qqe_slow      = float(signal.get("qqe_slow", 0))
+        qqe_fast_prev = float(signal.get("qqe_fast_prev", 0))
+        qqe_slow_prev = float(signal.get("qqe_slow_prev", 0))
+        qqe_bars_ago  = int(signal.get("qqe_cross_bars_ago", 99))
+
+        qqe_side_ok = (qqe_fast > qqe_slow) if direction == "LONG" else (qqe_fast < qqe_slow)
+        qqe_fresh   = qqe_bars_ago <= 6
+
+        if not qqe_side_ok:
+            sens = "baissier" if direction == "LONG" else "haussier"
+            return GateResult(
+                allowed      = False,
+                reason       = f"❌ GATE 4 FERMÉE — QQE {sens} — momentum court terme contre le trade",
+                gate1_sr     = True,
+                gate2_figure = True,
+                adx_ok       = True,
+                warnings     = warnings,
+            )
+
+        if not qqe_fresh:
+            return GateResult(
+                allowed      = False,
+                reason       = f"❌ GATE 4 FERMÉE — QQE croisement il y a {qqe_bars_ago} barres (max autorisé : 6)",
+                gate1_sr     = True,
+                gate2_figure = True,
+                adx_ok       = True,
+                warnings     = warnings,
+            )
 
         cross_bull = (qqe_fast > qqe_slow) and (qqe_fast_prev <= qqe_slow_prev)
         cross_bear = (qqe_fast < qqe_slow) and (qqe_fast_prev >= qqe_slow_prev)
+        qqe_ok     = True
 
         if direction == "LONG":
-            qqe_ok = qqe_fast > qqe_slow
             if cross_bull:
                 warnings.append("QQE: croisement haussier frais ✅✅")
-            elif qqe_ok and qqe_bars_ago <= 6:
-                warnings.append(f"QQE: haussier il y a {qqe_bars_ago} bougies ✅")
-            elif qqe_ok:
-                warnings.append(f"QQE: haussier mais croisement vieux ({qqe_bars_ago} bougies) ⚠️")
             else:
-                warnings.append("QQE: baissier ❌ — momentum court terme contre le trade")
-                qqe_ok = False
-        elif direction == "SHORT":
-            qqe_ok = qqe_fast < qqe_slow
+                warnings.append(f"QQE: haussier il y a {qqe_bars_ago} bougies ✅")
+        else:
             if cross_bear:
                 warnings.append("QQE: croisement baissier frais ✅✅")
-            elif qqe_ok and qqe_bars_ago <= 6:
-                warnings.append(f"QQE: baissier il y a {qqe_bars_ago} bougies ✅")
-            elif qqe_ok:
-                warnings.append(f"QQE: baissier mais croisement vieux ({qqe_bars_ago} bougies) ⚠️")
             else:
-                warnings.append("QQE: haussier ❌ — momentum court terme contre le trade")
-                qqe_ok = False
-        else:
-            qqe_ok = False
+                warnings.append(f"QQE: baissier il y a {qqe_bars_ago} bougies ✅")
 
         # ══════════════════════════════════════════════
         # FILTRE 5 — Zone de compression (bonus)
