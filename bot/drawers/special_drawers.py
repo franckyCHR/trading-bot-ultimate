@@ -115,9 +115,9 @@ class CompressionDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s          = signal
-        start_bar  = s["compression_start_bar"]
-        high_zone  = s["compression_high"]
-        low_zone   = s["compression_low"]
+        start_bar  = s.get("compression_start_bar", 0)
+        high_zone  = s.get("compression_high", s.get("zone_high", 0))
+        low_zone   = s.get("compression_low",  s.get("zone_low",  0))
         amplitude  = high_zone - low_zone
         nb_bougies = s.get("nb_bougies", 0)
         atr        = s.get("atr", amplitude * 0.2)

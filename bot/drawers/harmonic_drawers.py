@@ -126,7 +126,7 @@ class SharkDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s = signal
-        o_bar = s.get("O_bar", 0);  o_p = s["O_price"]
+        o_bar = s.get("O_bar", 0);  o_p = s.get("O_price", s.get("X_price", 0))
         x_bar = s["X_bar"];         x_p = s["X_price"]
         a_bar = s["A_bar"];         a_p = s["A_price"]
         b_bar = s["B_bar"];         b_p = s["B_price"]

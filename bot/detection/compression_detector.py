@@ -189,6 +189,11 @@ class CompressionDetector:
                             f"Zone de compression de {taille} bougies "
                             f"({range_relatif * 100:.1f}% range)"
                         ),
+                        # Alias pour drawers
+                        "compression_start_bar": int(debut),
+                        "compression_high":      round(max_high, 8),
+                        "compression_low":       round(min_low, 8),
+                        "nb_bougies":            taille,
                     }
 
                     # On prend la première trouvée (la plus récente car on itère à rebours)

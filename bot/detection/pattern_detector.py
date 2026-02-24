@@ -555,6 +555,8 @@ class PatternDetector:
                 "flag_canal_high": round(flag_high, 4),         # alias entry_calculator
                 "flag_canal_low":  round(flag_low, 4),          # alias entry_calculator
                 "pole_height":     round(mast_high_price - mast_low_price, 4),
+                "mat_start_bar":   int(mast_start),             # alias drawers
+                "mat_end_bar":     int(mast_end),               # alias drawers
             }
 
         return None
@@ -636,6 +638,8 @@ class PatternDetector:
                 "flag_canal_high": round(flag_high, 4),         # alias entry_calculator
                 "flag_canal_low":  round(flag_low, 4),          # alias entry_calculator
                 "pole_height":     round(mast_high_price - mast_low_price, 4),
+                "mat_start_bar":   int(mast_start),             # alias drawers
+                "mat_end_bar":     int(mast_end),               # alias drawers
             }
 
         return None
@@ -700,6 +704,7 @@ class PatternDetector:
             "low2":           round(float(recent_lo[-1]), 4),
             "support_start":  round(float(recent_lo[-2]), 4),  # alias entry_calculator
             "support_end":    round(float(recent_lo[-1]), 4),  # alias entry_calculator
+            "triangle_start_bar": int(min(recent_hi_idx[0], recent_lo_idx[0])),  # alias drawers
         }
 
     # --- 8. DESCENDING TRIANGLE (Bearish) --------------------------------
@@ -758,6 +763,7 @@ class PatternDetector:
             "high2":            round(float(recent_hi[-1]), 4),
             "resistance_start": round(float(recent_hi[-2]), 4),  # alias entry_calculator
             "resistance_end":   round(float(recent_hi[-1]), 4),  # alias entry_calculator
+            "triangle_start_bar": int(min(recent_hi_idx[0], recent_lo_idx[0])),  # alias drawers
         }
 
     # --- 9. SYMMETRIC TRIANGLE ------------------------------------------
@@ -827,6 +833,7 @@ class PatternDetector:
             "resistance_end":    round(float(recent_hi[-1]), 4),
             "support_start":     round(float(recent_lo[0]), 4),
             "support_end":       round(float(recent_lo[-1]), 4),
+            "triangle_start_bar": int(min(recent_hi_idx[0], recent_lo_idx[0])),  # alias drawers
         }
 
     # --- 10. RISING WEDGE (Bearish) --------------------------------------
@@ -893,6 +900,7 @@ class PatternDetector:
             "resistance_end":   round(float(recent_hi[-1]), 4),
             "support_start":    round(float(recent_lo[0]), 4),
             "support_end":      round(float(recent_lo[-1]), 4),
+            "wedge_start_bar":  int(min(recent_hi_idx[0], recent_lo_idx[0])),  # alias drawers
         }
 
     # --- 11. FALLING WEDGE (Bullish) -------------------------------------
@@ -959,4 +967,5 @@ class PatternDetector:
             "resistance_end":   round(float(recent_hi[-1]), 4),
             "support_start":    round(float(recent_lo[0]), 4),
             "support_end":      round(float(recent_lo[-1]), 4),
+            "wedge_start_bar":  int(min(recent_hi_idx[0], recent_lo_idx[0])),  # alias drawers
         }

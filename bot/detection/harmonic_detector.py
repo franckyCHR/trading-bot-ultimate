@@ -461,6 +461,9 @@ class HarmonicDetector:
             "B_bar": int(a_idx),
             "C_bar": int(b_idx),
             "D_bar": int(c_idx),
+            # Alias point O pour SharkDrawer (5 points : O→X→A→B→C)
+            "O_bar":   int(o_idx),
+            "O_price": round(o, 4),
             # Alias courts
             "X": round(o, 4),
             "A": round(x, 4),

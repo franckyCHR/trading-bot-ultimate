@@ -247,8 +247,8 @@ class BullFlagDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s          = signal
-        mat_start  = s["mat_start_bar"];   mat_low  = s["mat_low"]
-        mat_end    = s["mat_end_bar"];     mat_high = s["mat_high"]
+        mat_start  = s.get("mat_start_bar", 0);   mat_low  = s["mat_low"]
+        mat_end    = s.get("mat_end_bar", 0);     mat_high = s["mat_high"]
         flag_high  = s["flag_canal_high"]
         flag_low   = s["flag_canal_low"]
         entry      = flag_high
@@ -304,8 +304,8 @@ class BearFlagDrawer(BaseDrawer):
         mat_high  = s["mat_high"];   mat_low  = s["mat_low"]
         flag_high = s["flag_canal_high"]
         flag_low  = s["flag_canal_low"]
-        mat_start = s["mat_start_bar"]
-        mat_end   = s["mat_end_bar"]
+        mat_start = s.get("mat_start_bar", 0)
+        mat_end   = s.get("mat_end_bar", 0)
         entry     = flag_low
         hauteur   = mat_high - mat_low
         sl        = flag_high + s.get("atr", hauteur * 0.05)
@@ -346,7 +346,7 @@ class RisingWedgeDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s     = signal
-        start = s["wedge_start_bar"]
+        start = s.get("wedge_start_bar", 0)
         res_s = s["resistance_start"];  res_e = s["resistance_end"]
         sup_s = s["support_start"];     sup_e = s["support_end"]
         entry = sup_e
@@ -388,7 +388,7 @@ class FallingWedgeDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s     = signal
-        start = s["wedge_start_bar"]
+        start = s.get("wedge_start_bar", 0)
         res_s = s["resistance_start"];  res_e = s["resistance_end"]
         sup_s = s["support_start"];     sup_e = s["support_end"]
         entry = res_e
@@ -430,7 +430,7 @@ class AscendingTriangleDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s        = signal
-        start    = s["triangle_start_bar"]
+        start    = s.get("triangle_start_bar", 0)
         res      = s["resistance_level"]
         sup_s    = s["support_start"];   sup_e = s["support_end"]
         entry    = res
@@ -475,7 +475,7 @@ class DescendingTriangleDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s       = signal
-        start   = s["triangle_start_bar"]
+        start   = s.get("triangle_start_bar", 0)
         sup     = s["support_level"]
         res_s   = s["resistance_start"];  res_e = s["resistance_end"]
         entry   = sup
@@ -518,7 +518,7 @@ class SymmetricTriangleDrawer(BaseDrawer):
 
     def draw(self, signal: dict) -> DrawingOutput:
         s       = signal
-        start   = s["triangle_start_bar"]
+        start   = s.get("triangle_start_bar", 0)
         res_s   = s["resistance_start"];  res_e = s["resistance_end"]
         sup_s   = s["support_start"];     sup_e = s["support_end"]
         mid     = (res_e + sup_e) / 2
