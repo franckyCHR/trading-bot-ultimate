@@ -162,14 +162,52 @@ class GateChecker:
                 warnings.append(f"QQE: baissier il y a {qqe_bars_ago} bougies ✅")
 
         # ══════════════════════════════════════════════
-        # FILTRE 5 — Zone de compression (bonus)
+        # GATE 5 — Contexte HTF (BLOQUANT pour M15/M30)
+        # ══════════════════════════════════════════════
+        tf           = signal.get("timeframe", "1h")
+        htf_blocked  = signal.get("htf_blocked", False)
+        htf1_tf      = signal.get("htf1_tf", "1h")
+        htf1_trend   = signal.get("htf1_trend", "NEUTRE")
+        htf2_tf      = signal.get("htf2_tf", "4h")
+        htf2_trend   = signal.get("htf2_trend", "NEUTRE")
+
+        if tf in ("15m", "30m") and htf_blocked:
+            return GateResult(
+                allowed      = False,
+                reason       = (
+                    f"❌ GATE 5 FERMÉE — {htf1_tf} est {htf1_trend} "
+                    f"CONTRE ta direction {direction} — "
+                    f"Tu trades contre la tendance immédiate. ATTENDS."
+                ),
+                gate1_sr     = True,
+                gate2_figure = True,
+                adx_ok       = True,
+                qqe_ok       = True,
+                warnings     = warnings,
+            )
+
+        # Ajouter le contexte HTF comme info
+        if tf in ("15m", "30m"):
+            h1_ok = (direction == "LONG" and htf1_trend == "BULLISH") or \
+                    (direction == "SHORT" and htf1_trend == "BEARISH")
+            h4_ok = (direction == "LONG" and htf2_trend == "BULLISH") or \
+                    (direction == "SHORT" and htf2_trend == "BEARISH")
+            if h1_ok and h4_ok:
+                warnings.append(f"🎯 SNIPER {htf1_tf}+{htf2_tf} alignés → entrée de qualité")
+            elif h1_ok:
+                warnings.append(f"✅ {htf1_tf} aligné | {htf2_tf}: {htf2_trend} (surveille)")
+            else:
+                warnings.append(f"⚠️ {htf1_tf}: {htf1_trend} — contexte neutre")
+
+        # ══════════════════════════════════════════════
+        # FILTRE 6 — Zone de compression (bonus)
         # ══════════════════════════════════════════════
         has_compression = bool(signal.get("compression_zone"))
         if has_compression:
             warnings.append("🔥 COMPRESSION EXPLOSIVE — énergie accumulée")
 
         # ══════════════════════════════════════════════
-        # FILTRE 6 — Avertissements psychologiques
+        # FILTRE 7 — Avertissements psychologiques
         # ══════════════════════════════════════════════
         trades_today = signal.get("trades_today", 0)
         if trades_today >= 3:
@@ -186,25 +224,35 @@ class GateChecker:
         # ══════════════════════════════════════════════
         # RÉSULTAT FINAL
         # ══════════════════════════════════════════════
+        htf_aligned = signal.get("htf_aligned", False)
+        htf2_aligned = (
+            (direction == "LONG"  and signal.get("htf2_trend") == "BULLISH") or
+            (direction == "SHORT" and signal.get("htf2_trend") == "BEARISH")
+        )
+
         confluence_score = sum([
             has_sr,
             has_pattern or has_reversal,
-            has_pattern and has_reversal,   # bonus
+            has_pattern and has_reversal,   # bonus double confirmation
             adx_ok,
             qqe_ok,
             has_compression,
+            htf_aligned,                    # H1 dans le sens du trade
+            htf2_aligned,                   # H4 dans le sens du trade
         ])
 
-        if confluence_score >= 5:
-            status = "🔥 SIGNAL FORT"
-        elif confluence_score >= 3:
-            status = "✅ SIGNAL VALIDE"
+        if confluence_score >= 6:
+            status = "🔥 SNIPER PARFAIT"
+        elif confluence_score >= 4:
+            status = "✅ SIGNAL FORT"
+        elif confluence_score >= 2:
+            status = "📊 SIGNAL VALIDE"
         else:
             status = "⚠️ SIGNAL FAIBLE — surveiller"
 
         return GateResult(
             allowed      = True,
-            reason       = f"{status} — confluence {confluence_score}/6",
+            reason       = f"{status} — confluence {confluence_score}/8",
             gate1_sr     = True,
             gate2_figure = True,
             adx_ok       = adx_ok,

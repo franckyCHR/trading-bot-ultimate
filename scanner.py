@@ -49,7 +49,7 @@ PAIRS = [
     "DAX",       # DAX Allemand (^GDAXI)
 ]
 
-TIMEFRAMES = ["30m", "1h", "4h"]
+TIMEFRAMES = ["15m", "30m", "1h", "4h"]
 
 EXCHANGE = "forex"           # "forex" = yfinance | "binance" = crypto CCXT
 
@@ -134,11 +134,21 @@ def run_scan(pairs_override=None, tfs_override=None):
 
                 all_signals = patterns + candles + harmonics + compressions
 
-                # 5. Analyse HTF
-                htf_tf   = {"30m":"1h", "1h":"4h", "4h":"1d"}.get(tf, "4h")
-                df_htf   = feed.get_ohlcv(pair, htf_tf, limit=100)
-                htf_trend= mtf.get_trend_from_data(df_htf) if df_htf is not None else "NEUTRE"
-                htf_sr   = sr_det.detect(df_htf) if df_htf is not None else []
+                # 5. Analyse HTF — logique sniper M15/M30 = on vérifie H1 ET H4
+                HTF_MAP = {
+                    "15m": ("1h",  "4h"),
+                    "30m": ("1h",  "4h"),
+                    "1h" : ("4h",  "1d"),
+                    "4h" : ("1d",  None),
+                }
+                htf1_tf, htf2_tf = HTF_MAP.get(tf, ("4h", None))
+
+                df_htf1    = feed.get_ohlcv(pair, htf1_tf, limit=100)
+                htf1_trend = mtf.get_trend_from_data(df_htf1) if df_htf1 is not None else "NEUTRE"
+                htf1_sr    = sr_det.detect(df_htf1) if df_htf1 is not None else []
+
+                df_htf2    = feed.get_ohlcv(pair, htf2_tf, limit=100) if htf2_tf else None
+                htf2_trend = mtf.get_trend_from_data(df_htf2) if df_htf2 is not None else "NEUTRE"
 
                 for sig in all_signals:
 
@@ -158,16 +168,30 @@ def run_scan(pairs_override=None, tfs_override=None):
                         "sr_zone"    : bool(sr_zones),
                         "sr_strength": max((z.get("strength", 0) for z in sr_zones), default=0),
                         "timestamp"  : datetime.now().strftime("%H:%M"),
+                        "htf1_tf"    : htf1_tf,
+                        "htf1_trend" : htf1_trend,
+                        "htf2_tf"    : htf2_tf,
+                        "htf2_trend" : htf2_trend,
                     })
 
-                    # Multi-timeframe
-                    htf_result = mtf.analyze(tf, sig.get("direction","LONG"), {
-                        "trend"     : htf_trend,
-                        "sr_levels" : [z.get("price",0) for z in htf_sr],
-                        "price"     : df["close"].iloc[-1],
-                    })
-                    sig["htf_label"]  = htf_result.label
-                    sig["htf_aligned"]= htf_result.aligned
+                    # Multi-timeframe sniper
+                    htf_result = mtf.analyze_sniper(
+                        signal_tf  = tf,
+                        signal_dir = sig.get("direction", "LONG"),
+                        htf1_data  = {
+                            "trend"     : htf1_trend,
+                            "tf"        : htf1_tf,
+                            "sr_levels" : [z.get("price", 0) for z in htf1_sr],
+                            "price"     : df["close"].iloc[-1],
+                        },
+                        htf2_data  = {
+                            "trend" : htf2_trend,
+                            "tf"    : htf2_tf,
+                        } if htf2_tf else None,
+                    )
+                    sig["htf_label"]   = htf_result.label
+                    sig["htf_aligned"] = htf_result.aligned
+                    sig["htf_blocked"] = htf_result.blocked
 
                     # 6. Vérification des portes
                     gate_result = gate.check(sig)
