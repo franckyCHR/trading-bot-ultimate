@@ -8,237 +8,203 @@
 <style>
 /* ── Variables ───────────────────────────────────────────────────── */
 :root {
-  --bg:        #0b0e17;
-  --bg2:       #111520;
-  --panel:     #161b27;
-  --panel2:    #1c2236;
-  --border:    #252d3d;
-  --border2:   #2f3a50;
-  --text:      #cdd5e0;
-  --muted:     #6b7a94;
-  --accent:    #4f8ef7;
-  --accent2:   #3a7bd5;
-  --long:      #2dbb7a;
-  --long-bg:   #0f2e1f;
-  --short:     #e85555;
-  --short-bg:  #2e0f0f;
-  --warn:      #f0a832;
-  --radius:    10px;
-  --radius-sm: 6px;
+  --bg:       #080c14;
+  --bg2:      #0e1220;
+  --panel:    #141927;
+  --panel2:   #1a2133;
+  --border:   #222c40;
+  --border2:  #2b3650;
+  --text:     #c8d4e8;
+  --muted:    #5c6e8a;
+  --accent:   #4f8ef7;
+  --accent2:  #3570d4;
+  --long:     #25c47a;
+  --long-bg:  #0a2418;
+  --short:    #e84545;
+  --short-bg: #2a0d0d;
+  --warn:     #f0a832;
+  --radius:   10px;
+  --rsm:      6px;
 }
 
-/* ── Reset ───────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html { scroll-behavior: smooth; }
-
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
   font-size: 13px;
   line-height: 1.5;
   min-height: 100vh;
+  overflow: hidden;
 }
-
-/* ── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
-/* ── Header ──────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   TOP BAR
+═══════════════════════════════════════════ */
 .topbar {
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
+  height: 50px;
   padding: 0 20px;
-  height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(8px);
 }
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 14px;
   font-weight: 700;
-  font-size: 15px;
   letter-spacing: -.3px;
   color: #fff;
+  white-space: nowrap;
 }
-.brand-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--long);
+.brand-pulse {
+  width: 8px; height: 8px;
   border-radius: 50%;
-  animation: pulse 2s infinite;
+  background: var(--long);
+  box-shadow: 0 0 8px var(--long);
+  animation: glow 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .35; }
+@keyframes glow {
+  0%,100% { opacity:1; box-shadow:0 0 6px var(--long); }
+  50%      { opacity:.4; box-shadow:0 0 2px var(--long); }
 }
-.brand span { color: var(--accent); }
+.brand em { color: var(--accent); font-style: normal; }
 
 .topbar-stats {
   display: flex;
-  gap: 0;
-  border-left: 1px solid var(--border);
-  padding-left: 14px;
-  margin-left: 4px;
-}
-.stat {
-  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  border-right: 1px solid var(--border);
-  font-size: 11px;
+  gap: 0;
+  margin-left: 16px;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
 }
-.stat:last-child { border-right: none; }
-.stat-label { color: var(--muted); }
-.stat-val   { font-weight: 600; color: #fff; }
-.stat-val.green { color: var(--long); }
-.stat-val.red   { color: var(--short); }
-.stat-val.blue  { color: var(--accent); }
+.tstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+}
+.tstat:last-child { border-right: none; padding-right: 0; }
+.tstat-val   { font-size: 14px; font-weight: 700; color: #e0e8f5; line-height: 1.2; }
+.tstat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 1px; }
+.tstat-val.g { color: var(--long); }
+.tstat-val.r { color: var(--short); }
+.tstat-val.b { color: var(--accent); }
 
-.badge-status {
-  font-size: 11px;
-  padding: 3px 10px;
+.badge {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 12px;
   border-radius: 20px;
-  background: var(--panel);
-  color: var(--muted);
-  font-weight: 500;
   display: none;
 }
-.badge-status.running { background: #1b2d50; color: var(--accent); display: inline; }
-.badge-status.done    { background: var(--long-bg); color: var(--long); display: inline; }
-.badge-status.error   { background: var(--short-bg); color: var(--short); display: inline; }
+.badge.running { background:#162040; color:var(--accent); border:1px solid #2a4070; display:inline; }
+.badge.done    { background:var(--long-bg); color:var(--long); border:1px solid #1a4030; display:inline; }
+.badge.error   { background:var(--short-bg); color:var(--short); border:1px solid #401a1a; display:inline; }
 
-/* ── Controls bar ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   CONTROLS BAR
+═══════════════════════════════════════════ */
 .ctrlbar {
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
-  padding: 10px 20px;
+  padding: 9px 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   flex-wrap: wrap;
+  height: 50px;
 }
-
-.ctrl-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ctrl-label {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  white-space: nowrap;
-}
-
+.clabel { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; white-space: nowrap; }
 select {
   background: var(--panel);
   color: var(--text);
   border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  border-radius: var(--rsm);
+  padding: 5px 28px 5px 10px;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
-  min-width: 160px;
   outline: none;
-  transition: border-color .15s;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a94' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235c6e8a' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
-  padding-right: 28px;
+  transition: border-color .15s;
+  min-width: 155px;
 }
 select:focus { border-color: var(--accent); }
-
-.tf-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.tf-group { display: flex; gap: 5px; }
 .tf-lbl {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 5px 11px;
+  border-radius: var(--rsm);
+  padding: 4px 10px;
   cursor: pointer;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .3px;
-  user-select: none;
+  font-weight: 700;
   color: var(--muted);
+  user-select: none;
   transition: all .15s;
 }
 .tf-lbl input { display: none; }
-.tf-lbl.on {
-  border-color: var(--accent);
-  background: #1b2d50;
-  color: var(--accent);
-}
-.tf-lbl:hover { border-color: var(--border2); }
+.tf-lbl.on { border-color: var(--accent); background: #162040; color: var(--accent); }
+.tf-lbl:hover:not(.on) { border-color: var(--border2); }
 
 #scan-btn {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 7px 22px;
-  font-size: 13px;
+  border-radius: var(--rsm);
+  padding: 6px 20px;
+  font-size: 12px;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 2px 10px rgba(79,142,247,.3);
   transition: opacity .15s, transform .1s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(79,142,247,.25);
+  flex-shrink: 0;
 }
-#scan-btn:hover:not(:disabled)  { opacity: .88; transform: translateY(-1px); }
-#scan-btn:active:not(:disabled) { transform: translateY(0); }
-#scan-btn:disabled { background: var(--panel2); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+#scan-btn:hover:not(:disabled) { opacity:.85; transform:translateY(-1px); }
+#scan-btn:active:not(:disabled) { transform:translateY(0); }
+#scan-btn:disabled { background:var(--panel2); color:var(--muted); box-shadow:none; cursor:not-allowed; }
 #scan-btn.running {
-  background: linear-gradient(135deg, #a07200, #f0a832);
-  animation: btnPulse 1.5s infinite;
+  background: linear-gradient(135deg,#7a4d00,#f0a832);
+  animation: btnshine 2s linear infinite;
 }
-@keyframes btnPulse {
-  0%, 100% { box-shadow: 0 2px 8px rgba(240,168,50,.25); }
-  50%       { box-shadow: 0 2px 18px rgba(240,168,50,.5); }
+@keyframes btnshine {
+  0%,100% { box-shadow: 0 2px 10px rgba(240,168,50,.25); }
+  50%      { box-shadow: 0 2px 18px rgba(240,168,50,.55); }
 }
 
-/* ── Body layout ─────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
 .body-wrap {
   display: grid;
-  grid-template-columns: 1fr 280px;
-  grid-template-rows: auto 1fr;
-  gap: 0;
-  height: calc(100vh - 52px - 53px);
-  min-height: 0;
+  grid-template-columns: 1fr 272px;
+  height: calc(100vh - 100px);
+  overflow: hidden;
 }
-
 .main-col {
   overflow-y: auto;
-  padding: 16px 20px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
-
 .side-col {
   border-left: 1px solid var(--border);
   background: var(--bg2);
@@ -247,98 +213,305 @@ select:focus { border-color: var(--accent); }
   overflow: hidden;
 }
 
-/* ── Logs ────────────────────────────────────────────────────────── */
-.logs-header {
+/* ═══════════════════════════════════════════
+   PROGRESS PANEL — ORIGINAL
+═══════════════════════════════════════════ */
+
+/* ── Header ── */
+.pg-header {
+  padding: 12px 14px 8px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  user-select: none;
 }
-.logs-title {
+.pg-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .8px;
   color: var(--muted);
+}
+.pg-radar {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--muted);
+  position: relative;
+  flex-shrink: 0;
+}
+.pg-radar::after {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+}
+.pg-radar.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(79,142,247,.5);
+}
+.pg-radar.active::after { background: var(--accent); }
+.pg-radar.done { border-color: var(--long); }
+.pg-radar.done::after { background: var(--long); }
+
+.pg-pct {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e0e8f5;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+}
+.pg-pct.active { color: var(--accent); }
+.pg-pct.done   { color: var(--long); }
+
+/* ── Progress bar ── */
+.pg-bar-wrap { padding: 8px 14px 10px; }
+.pg-track {
+  height: 5px;
+  background: var(--panel2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.pg-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0%;
+  transition: width .4s cubic-bezier(.4,0,.2,1);
+  background: linear-gradient(90deg, var(--accent2), var(--accent), #7ab4ff);
+  background-size: 200% 100%;
+  position: relative;
+}
+.pg-fill.active {
+  animation: fillshine 1.6s linear infinite;
+}
+.pg-fill.done {
+  background: linear-gradient(90deg, #1a8050, var(--long), #5de0a0);
+}
+@keyframes fillshine {
+  0%   { background-position: 100% 0%; }
+  100% { background-position: -100% 0%; }
+}
+/* Glowing edge on the fill */
+.pg-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: -1px;
+  width: 12px; height: 7px;
+  background: rgba(255,255,255,.5);
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0;
+}
+.pg-fill.active::after { opacity: 1; }
+
+/* ── Mini stats ── */
+.pg-stats {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 0;
+  padding: 0 14px 10px;
+  border-bottom: 1px solid var(--border);
 }
-.logs-chevron { color: var(--muted); font-size: 10px; transition: transform .2s; }
-.logs-chevron.open { transform: rotate(180deg); }
-
-.clr-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  padding: 2px 8px;
-  font-size: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all .15s;
+.pg-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
 }
-.clr-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pg-stat + .pg-stat { border-left: 1px solid var(--border); }
+.pg-sv { font-size: 16px; font-weight: 800; color: #e0e8f5; font-variant-numeric: tabular-nums; line-height: 1; }
+.pg-sv.g { color: var(--long); }
+.pg-sv.r { color: var(--short); }
+.pg-sl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
 
-#logs {
+/* ── Grid ── */
+.pg-grid-area {
   flex: 1;
   overflow-y: auto;
-  padding: 10px 14px;
-  font-family: 'Consolas', 'Menlo', monospace;
-  font-size: 10.5px;
-  line-height: 1.7;
-  background: var(--bg);
+  padding: 8px 10px 6px;
 }
-.li  { color: var(--muted); }
-.lw  { color: var(--warn); }
-.le  { color: var(--short); }
-.ls  { color: var(--long); font-weight: bold; }
-.lx  { color: var(--accent); font-style: italic; }
 
-/* ── Results ─────────────────────────────────────────────────────── */
+/* TF header row */
+.pg-tf-row {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 4px;
+  padding-left: 68px;
+}
+.pg-tf-hdr {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+
+/* Pair row */
+.pg-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.pg-pair {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--muted);
+  width: 65px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-cells {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+/* Individual cell */
+.pg-cell {
+  flex: 1;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background .25s, border-color .25s, box-shadow .25s;
+  cursor: default;
+}
+/* States */
+.pg-cell[data-state="scanning"] {
+  background: #162040;
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(79,142,247,.35);
+  animation: cellscan 1s ease-in-out infinite;
+}
+@keyframes cellscan {
+  0%,100% { box-shadow: 0 0 4px rgba(79,142,247,.3); }
+  50%      { box-shadow: 0 0 10px rgba(79,142,247,.65); }
+}
+.pg-cell[data-state="signal"] {
+  background: var(--long-bg);
+  border-color: var(--long);
+  box-shadow: 0 0 6px rgba(37,196,122,.3);
+}
+.pg-cell[data-state="signal"]::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--long);
+  font-weight: 900;
+}
+.pg-cell[data-state="done"] {
+  background: #131a28;
+  border-color: #1c2840;
+}
+.pg-cell[data-state="error"] {
+  background: #1e1000;
+  border-color: #4a2a00;
+}
+.pg-cell[data-state="error"]::after {
+  content: '!';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--warn);
+  font-weight: 900;
+}
+
+/* Tooltip on hover */
+.pg-cell[title]:hover {
+  z-index: 10;
+}
+
+/* ── Status line ── */
+.pg-status {
+  border-top: 1px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+}
+.pg-cursor {
+  font-size: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+  animation: blink 1.2s step-end infinite;
+}
+.pg-cursor.idle   { color: var(--muted); animation: none; }
+.pg-cursor.done   { color: var(--long);  animation: none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+#pg-status-text {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Elapsed timer */
+.pg-elapsed {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--border2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: 'Consolas', monospace;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN — TABLE
+═══════════════════════════════════════════ */
 .section-hdr {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 .section-title {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .8px;
   color: var(--muted);
 }
 #cnt {
-  background: var(--panel2);
-  color: var(--accent);
   font-size: 10px;
   font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
+  color: var(--accent);
+  background: var(--panel2);
   border: 1px solid var(--border2);
+  padding: 2px 10px;
+  border-radius: 20px;
 }
-
-/* ── Table ───────────────────────────────────────────────────────── */
 .tbl-scroll { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
+table { width:100%; border-collapse:collapse; font-size:12px; }
 thead th {
   background: var(--panel);
   color: var(--muted);
   text-align: left;
-  padding: 9px 12px;
+  padding: 8px 11px;
   border-bottom: 1px solid var(--border);
   font-weight: 600;
+  font-size: 9.5px;
   text-transform: uppercase;
-  font-size: 10px;
   letter-spacing: .5px;
   white-space: nowrap;
 }
@@ -348,269 +521,144 @@ tbody tr {
   transition: background .1s;
 }
 tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: var(--panel); }
-tbody tr.active-row { background: #1b2d50 !important; }
-tbody td { padding: 9px 12px; vertical-align: middle; white-space: nowrap; }
+tbody tr:hover    { background: var(--panel); }
+tbody tr.sel-row  { background: #162040 !important; }
+tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
 
-/* Direction badge */
-.dir-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .3px;
-}
-.dir-long  { background: var(--long-bg); color: var(--long); border: 1px solid rgba(45,187,122,.25); }
-.dir-short { background: var(--short-bg); color: var(--short); border: 1px solid rgba(232,85,85,.25); }
-.dir-long::before  { content: "▲"; font-size: 8px; }
-.dir-short::before { content: "▼"; font-size: 8px; }
+.dir-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+.dL { background:var(--long-bg);  color:var(--long);  border:1px solid rgba(37,196,122,.2); }
+.dS { background:var(--short-bg); color:var(--short); border:1px solid rgba(232,69,69,.2); }
+.dL::before { content:"▲"; font-size:7px; }
+.dS::before { content:"▼"; font-size:7px; }
 
-/* Price cells */
-.pe { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
-.ps { color: var(--short); font-variant-numeric: tabular-nums; }
-.pt1{ color: var(--warn); font-variant-numeric: tabular-nums; }
-.pt2{ color: var(--long); font-weight: 600; font-variant-numeric: tabular-nums; }
-.prr{ color: var(--muted); font-variant-numeric: tabular-nums; }
+.pair-cell { font-weight:700; color:#dce8fa; }
+.tf-pill   { display:inline-block; background:var(--panel2); color:var(--muted); padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:700; border:1px solid var(--border); }
+.tf-pill.sniper { background:#1a1640; color:#9b89f5; border-color:rgba(155,137,245,.3); }
+.pat-cell { color:#9fb0c8; }
 
-/* Pair + TF */
-.pair-cell { font-weight: 700; color: #e0e8f5; }
-.tf-badge {
-  display: inline-block;
-  background: var(--panel2);
-  color: var(--muted);
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-}
-.tf-badge.sniper {
-  background: #1f1b40;
-  color: #9b89f5;
-  border-color: rgba(155,137,245,.3);
-}
+.pe  { color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
+.ps  { color:var(--short);  font-variant-numeric:tabular-nums; }
+.pt1 { color:var(--warn);   font-variant-numeric:tabular-nums; }
+.pt2 { color:var(--long);   font-weight:600; font-variant-numeric:tabular-nums; }
+.prr { color:var(--muted);  font-variant-numeric:tabular-nums; }
+.adx-ok  { color:var(--long);  font-weight:600; }
+.adx-low { color:var(--muted); }
 
-/* Pattern cell */
-.pattern-cell { color: #b0bec5; }
-.fire { color: var(--warn); }
+/* Score pips */
+.score { display:inline-flex; align-items:center; gap:2.5px; }
+.pip { width:7px; height:7px; border-radius:50%; background:var(--panel2); border:1px solid var(--border); }
+.pip.on   { border:none; background:var(--accent); }
+.pip.on.g { background:var(--long); }
+.pip.on.w { background:var(--warn); }
 
-/* ADX */
-.adx-ok  { color: var(--long); font-weight: 600; }
-.adx-low { color: var(--muted); }
+.pine-btn { background:var(--panel2); color:var(--accent); border:1px solid var(--border2); padding:2px 8px; font-size:10px; font-weight:500; border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s; }
+.pine-btn:hover { background:#162040; border-color:var(--accent); }
+.pine-btn.ok { background:var(--long-bg); color:var(--long); border-color:var(--long); }
 
-/* Pine button */
-.pine-btn {
-  background: var(--panel2);
-  color: var(--accent);
-  border: 1px solid var(--border2);
-  padding: 3px 9px;
-  font-size: 10px;
-  font-weight: 500;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all .15s;
-}
-.pine-btn:hover { background: #1b2d50; border-color: var(--accent); }
-.pine-btn.ok { background: var(--long-bg); color: var(--long); border-color: var(--long); }
+.empty { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-ico { font-size:28px; opacity:.5; margin-bottom:10px; }
+.empty-t   { font-size:13px; font-weight:600; color:var(--text); margin-bottom:5px; }
+.empty-s   { font-size:11px; color:var(--muted); }
 
-/* Score bar */
-.score {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.score-pip {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--border2);
-}
-.score-pip.on { background: var(--accent); }
-.score-pip.on.hi { background: var(--long); }
-.score-pip.on.lo { background: var(--warn); }
-
-/* Empty state */
-.empty {
-  text-align: center;
-  padding: 56px 24px;
-  color: var(--muted);
-}
-.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: .6; }
-.empty-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.empty-sub { font-size: 12px; color: var(--muted); }
-
-/* ── Chart section ───────────────────────────────────────────────── */
-#chart-section {
-  display: none;
-  border-top: 1px solid var(--border);
-  background: var(--bg2);
-}
-
-.chart-header {
+/* ═══════════════════════════════════════════
+   CHART SECTION
+═══════════════════════════════════════════ */
+#chart-section { display:none; border-radius:var(--radius); border:1px solid var(--border); overflow:hidden; }
+.chart-hdr {
+  background: var(--panel);
+  padding: 9px 14px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  justify-content: space-between;
   border-bottom: 1px solid var(--border);
 }
+.chart-meta { display:flex; align-items:center; gap:10px; }
+.chart-pair { font-size:14px; font-weight:700; color:#fff; }
+.chart-tf   { background:var(--panel2); color:var(--muted); padding:2px 7px; border-radius:4px; font-size:10px; font-weight:600; }
+.chart-lvls { display:flex; gap:10px; font-size:11px; }
+.chart-lvls .el { color:var(--accent); }
+.chart-lvls .sl { color:var(--short); }
+.chart-lvls .tp { color:var(--long); }
+.close-btn { background:none; border:1px solid var(--border2); color:var(--muted); padding:3px 11px; font-size:11px; font-weight:500; border-radius:var(--rsm); cursor:pointer; font-family:inherit; transition:all .15s; }
+.close-btn:hover { border-color:var(--short); color:var(--short); }
+#chart-box { background:var(--bg); height:440px; }
 
-.chart-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.chart-pair { font-size: 14px; font-weight: 700; color: #fff; }
-.chart-tf   { background: var(--panel2); color: var(--muted); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.chart-levels {
-  display: flex;
-  gap: 10px;
-  font-size: 11px;
-}
-.chart-levels .el { color: var(--accent); }
-.chart-levels .sl { color: var(--short); }
-.chart-levels .tp { color: var(--long); }
-
-.close-chart {
-  background: none;
-  border: 1px solid var(--border2);
-  color: var(--muted);
-  padding: 4px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all .15s;
-}
-.close-chart:hover { border-color: var(--short); color: var(--short); }
-
-#chart-box {
-  background: var(--bg);
-  height: 460px;
-}
-
-/* ── Responsive ──────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
 @media (max-width: 960px) {
-  .body-wrap {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    height: auto;
-    min-height: 0;
-  }
-  .side-col {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    height: 180px;
-  }
-  .topbar-stats { display: none; }
+  body { overflow: auto; }
+  .body-wrap { grid-template-columns:1fr; height:auto; overflow:visible; }
+  .side-col  { border-left:none; border-top:1px solid var(--border); height:300px; }
+  .topbar-stats { display:none; }
 }
-
-@media (max-width: 640px) {
-  .ctrlbar { padding: 10px 12px; gap: 10px; }
-  .main-col { padding: 12px; }
-  thead th:nth-child(6),
-  thead th:nth-child(7),
-  thead th:nth-child(8),
-  thead th:nth-child(10) { display: none; }
-  tbody td:nth-child(6),
-  tbody td:nth-child(7),
-  tbody td:nth-child(8),
-  tbody td:nth-child(10) { display: none; }
-  #chart-box { height: 320px; }
+@media (max-width: 620px) {
+  .ctrlbar { height:auto; padding:8px 12px; }
+  .main-col { padding:10px 12px; }
+  thead th:nth-child(7), thead th:nth-child(8),
+  thead th:nth-child(9), thead th:nth-child(11) { display:none; }
+  tbody td:nth-child(7), tbody td:nth-child(8),
+  tbody td:nth-child(9), tbody td:nth-child(11) { display:none; }
+  #chart-box { height:300px; }
 }
-
-/* ── HTF label ───────────────────────────────────────────────────── */
-.htf-tag {
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #1f1b40;
-  color: #9b89f5;
-  border: 1px solid rgba(155,137,245,.25);
-  white-space: nowrap;
-}
-.htf-tag.blocked { background: var(--short-bg); color: var(--short); border-color: rgba(232,85,85,.25); }
 </style>
 </head>
 <body>
 
-<!-- ── Top bar ────────────────────────────────────────────────────── -->
+<!-- ═══════════ TOP BAR ═══════════ -->
 <header class="topbar">
-  <div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:0">
     <div class="brand">
-      <div class="brand-dot"></div>
-      Trading<span>Bot</span> Ultimate
+      <div class="brand-pulse"></div>
+      Trading<em>Bot</em>&nbsp;Ultimate
     </div>
     <div class="topbar-stats">
-      <div class="stat">
-        <span class="stat-label">Signaux</span>
-        <span class="stat-val blue" id="stat-total">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">LONG</span>
-        <span class="stat-val green" id="stat-long">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">SHORT</span>
-        <span class="stat-val red" id="stat-short">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Top paire</span>
-        <span class="stat-val" id="stat-top">—</span>
-      </div>
+      <div class="tstat"><span class="tstat-val b" id="s-total">0</span><span class="tstat-label">signaux</span></div>
+      <div class="tstat"><span class="tstat-val g" id="s-long">0</span><span class="tstat-label">long</span></div>
+      <div class="tstat"><span class="tstat-val r" id="s-short">0</span><span class="tstat-label">short</span></div>
+      <div class="tstat"><span class="tstat-val"   id="s-top">—</span><span class="tstat-label">top paire</span></div>
     </div>
   </div>
-  <span class="badge-status" id="badge"></span>
+  <span class="badge" id="badge"></span>
 </header>
 
-<!-- ── Controls bar ──────────────────────────────────────────────── -->
+<!-- ═══════════ CONTROLS ═══════════ -->
 <div class="ctrlbar">
-  <div class="ctrl-group">
-    <span class="ctrl-label">Paire</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="clabel">Paire</span>
     <select id="pair-sel">
       <option value="">Toutes les paires</option>
-      {% for pair in pairs %}
-      <option value="{{ pair }}">{{ pair }}</option>
-      {% endfor %}
+      {% for pair in pairs %}<option value="{{ pair }}">{{ pair }}</option>{% endfor %}
     </select>
   </div>
-
-  <div class="ctrl-group">
-    <span class="ctrl-label">TF</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="clabel">TF</span>
     <div class="tf-group">
       {% for tf in timeframes %}
       <label class="tf-lbl on" id="tfl-{{ tf }}">
-        <input type="checkbox" value="{{ tf }}" checked onchange="toggleTF(this)">
-        {{ tf }}
+        <input type="checkbox" value="{{ tf }}" checked onchange="toggleTF(this)">{{ tf }}
       </label>
       {% endfor %}
     </div>
   </div>
-
   <button id="scan-btn" onclick="startScan()">&#x1F50D;&nbsp; Lancer le scan</button>
 </div>
 
-<!-- ── Body ──────────────────────────────────────────────────────── -->
+<!-- ═══════════ BODY ═══════════ -->
 <div class="body-wrap">
 
-  <!-- Main content -->
+  <!-- Main column -->
   <div class="main-col">
 
-    <!-- Chart section (hidden by default) -->
+    <!-- Chart (hidden by default) -->
     <div id="chart-section">
-      <div class="chart-header">
+      <div class="chart-hdr">
         <div class="chart-meta">
           <span class="chart-pair" id="chart-pair">—</span>
           <span class="chart-tf"   id="chart-tf">—</span>
-          <div class="chart-levels" id="chart-levels"></div>
+          <div class="chart-lvls"  id="chart-lvls"></div>
         </div>
-        <button class="close-chart" onclick="closeChart()">&#x2715;&nbsp;Fermer</button>
+        <button class="close-btn" onclick="closeChart()">&#x2715; Fermer</button>
       </div>
       <div id="chart-box"></div>
     </div>
@@ -618,35 +666,22 @@ tbody td { padding: 9px 12px; vertical-align: middle; white-space: nowrap; }
     <!-- Signals table -->
     <div>
       <div class="section-hdr">
-        <span class="section-title">Signaux detectes</span>
+        <span class="section-title">Signaux détectés</span>
         <span id="cnt">0 signal</span>
       </div>
       <div class="tbl-scroll">
         <table>
-          <thead>
-            <tr>
-              <th>Paire</th>
-              <th>TF</th>
-              <th>Pattern</th>
-              <th>Direction</th>
-              <th>Score</th>
-              <th>Entree</th>
-              <th>SL</th>
-              <th>TP1</th>
-              <th>TP2</th>
-              <th>RR</th>
-              <th>ADX</th>
-              <th>Pine</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th>Paire</th><th>TF</th><th>Pattern</th><th>Direction</th>
+            <th>Score</th><th>Entrée</th><th>SL</th><th>TP1</th><th>TP2</th>
+            <th>RR</th><th>ADX</th><th>Pine</th>
+          </tr></thead>
           <tbody id="tbody">
-            <tr><td colspan="12">
-              <div class="empty">
-                <div class="empty-icon">&#x1F50D;</div>
-                <div class="empty-title">Aucun scan lance</div>
-                <div class="empty-sub">Configure tes paires et timeframes, puis clique sur "Lancer le scan"</div>
-              </div>
-            </td></tr>
+            <tr><td colspan="12"><div class="empty">
+              <div class="empty-ico">&#x1F50D;</div>
+              <div class="empty-t">Aucun scan lancé</div>
+              <div class="empty-s">Configure tes paramètres puis clique sur "Lancer le scan"</div>
+            </div></td></tr>
           </tbody>
         </table>
       </div>
@@ -654,69 +689,100 @@ tbody td { padding: 9px 12px; vertical-align: middle; white-space: nowrap; }
 
   </div><!-- /main-col -->
 
-  <!-- Sidebar — Logs -->
+  <!-- Sidebar — Progress Panel -->
   <div class="side-col">
-    <div class="logs-header" onclick="toggleLogs(this)">
-      <div class="logs-title">
-        <span>&#x1F4CB;</span> Logs en temps réel
+
+    <!-- Header -->
+    <div class="pg-header">
+      <div class="pg-title">
+        <div class="pg-radar" id="pg-radar"></div>
+        Scan Progress
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="clr-btn" onclick="event.stopPropagation();clearLogs()">Effacer</button>
-        <span class="logs-chevron open">&#9660;</span>
+      <span class="pg-pct" id="pg-pct">—</span>
+    </div>
+
+    <!-- Bar -->
+    <div class="pg-bar-wrap">
+      <div class="pg-track">
+        <div class="pg-fill" id="pg-fill" style="width:0%"></div>
       </div>
     </div>
-    <div id="logs"><span class="lx">En attente du scan...</span></div>
-  </div>
+
+    <!-- Stats -->
+    <div class="pg-stats">
+      <div class="pg-stat">
+        <span class="pg-sv" id="pg-scanned">0</span>
+        <span class="pg-sl">scannés</span>
+      </div>
+      <div class="pg-stat">
+        <span class="pg-sv g" id="pg-signals">0</span>
+        <span class="pg-sl">signaux</span>
+      </div>
+      <div class="pg-stat">
+        <span class="pg-sv" id="pg-total">0</span>
+        <span class="pg-sl">total</span>
+      </div>
+    </div>
+
+    <!-- Pair × TF grid -->
+    <div class="pg-grid-area">
+      <div class="pg-tf-row" id="pg-tf-row"></div>
+      <div id="pg-grid"></div>
+    </div>
+
+    <!-- Status line -->
+    <div class="pg-status">
+      <span class="pg-cursor idle" id="pg-cursor">◉</span>
+      <span id="pg-status-text">En attente du scan...</span>
+      <span class="pg-elapsed" id="pg-elapsed"></span>
+    </div>
+
+  </div><!-- /side-col -->
 
 </div><!-- /body-wrap -->
 
 <script>
-let scanId = null, es = null, scanning = false, activeRow = null;
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+let scanId   = null;
+let es       = null;
+let scanning = false;
+let activeRow = null;
+let chartInstance = null;
 
-/* ── Timeframe toggles ────────────────────────────────────────────── */
+// Progress state
+const pg = {
+  pairs:    [],   // pairs in scan
+  tfs:      [],   // TFs in scan
+  total:    0,    // total cells
+  scanned:  0,    // cells processed
+  signals:  0,    // signals found
+  filtered: 0,
+  curPair:  null,
+  curTf:    null,
+  timer:    null,
+  startMs:  0,
+};
+
+/* ════════════════════════════════════════════
+   TF TOGGLE
+════════════════════════════════════════════ */
 function toggleTF(cb) {
   cb.parentElement.classList.toggle("on", cb.checked);
 }
-
 function getTFs() {
   return [...document.querySelectorAll(".tf-group input:checked")].map(c => c.value);
 }
 
-/* ── Logs ─────────────────────────────────────────────────────────── */
-function log(msg, cls) {
-  const d = document.getElementById("logs");
-  const s = document.createElement("span");
-  s.className = cls || classify(msg);
-  s.textContent = msg;
-  d.appendChild(s);
-  d.appendChild(document.createElement("br"));
-  d.scrollTop = d.scrollHeight;
-}
-
-function classify(m) {
-  if (m.includes("ERROR") || m.includes("Erreur")) return "le";
-  if (m.includes("WARNING"))                         return "lw";
-  if (m.includes("signal") || m.includes("✅") || m.includes("SIGNAL")) return "ls";
-  if (m.startsWith("[Sys]"))                         return "lx";
-  return "li";
-}
-
-function clearLogs() { document.getElementById("logs").innerHTML = ""; }
-
-function toggleLogs(hdr) {
-  const chevron = hdr.querySelector(".logs-chevron");
-  const logs    = document.getElementById("logs");
-  const open    = chevron.classList.toggle("open");
-  logs.style.display = open ? "" : "none";
-}
-
-/* ── Badge / button state ─────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   BADGE / BUTTON
+════════════════════════════════════════════ */
 function setBadge(state, txt) {
   const b = document.getElementById("badge");
-  b.className = "badge-status " + state;
+  b.className = "badge " + state;
   b.textContent = txt;
 }
-
 function resetBtn() {
   scanning = false;
   const b = document.getElementById("scan-btn");
@@ -725,36 +791,211 @@ function resetBtn() {
   b.classList.remove("running");
 }
 
-/* ── Stats bar ────────────────────────────────────────────────────── */
-function updateStats(sigs) {
-  const total = sigs.length;
-  const longs = sigs.filter(s => s.direction === "LONG").length;
-  const shorts = total - longs;
-  const pairCount = {};
-  sigs.forEach(s => { pairCount[s.pair] = (pairCount[s.pair] || 0) + 1; });
-  const top = Object.entries(pairCount).sort((a,b) => b[1]-a[1])[0];
-  document.getElementById("stat-total").textContent = total;
-  document.getElementById("stat-long").textContent  = longs;
-  document.getElementById("stat-short").textContent = shorts;
-  document.getElementById("stat-top").textContent   = top ? top[0] : "—";
-  document.getElementById("cnt").textContent = total + " signal" + (total > 1 ? "s" : "");
+/* ════════════════════════════════════════════
+   TOP STATS
+════════════════════════════════════════════ */
+function updateTopStats(sigs) {
+  const longs  = sigs.filter(s => s.direction === "LONG").length;
+  const shorts = sigs.length - longs;
+  const pmap   = {};
+  sigs.forEach(s => pmap[s.pair] = (pmap[s.pair] || 0) + 1);
+  const top = Object.entries(pmap).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById("s-total").textContent = sigs.length;
+  document.getElementById("s-long").textContent  = longs;
+  document.getElementById("s-short").textContent = shorts;
+  document.getElementById("s-top").textContent   = top ? top[0] : "—";
+  document.getElementById("cnt").textContent     = sigs.length + " signal" + (sigs.length > 1 ? "s" : "");
 }
 
-/* ── Scan ─────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   PROGRESS PANEL
+════════════════════════════════════════════ */
+function buildGrid(pairs, tfs) {
+  pg.pairs   = pairs;
+  pg.tfs     = tfs;
+  pg.total   = pairs.length * tfs.length;
+  pg.scanned = 0;
+  pg.signals = 0;
+  pg.filtered= 0;
+  pg.curPair = null;
+  pg.curTf   = null;
+
+  // TF header row
+  const hdr = document.getElementById("pg-tf-row");
+  hdr.style.gridTemplateColumns = `repeat(${tfs.length}, 1fr)`;
+  hdr.innerHTML = tfs.map(tf =>
+    `<span class="pg-tf-hdr">${tf}</span>`
+  ).join("");
+
+  // Pair rows
+  const grid = document.getElementById("pg-grid");
+  grid.innerHTML = pairs.map(pair => {
+    const cells = tfs.map(tf =>
+      `<div class="pg-cell" id="cell-${cellId(pair,tf)}" data-state="empty" data-pair="${pair}" data-tf="${tf}" title="${pair} | ${tf}"></div>`
+    ).join("");
+    const shortPair = pair.replace("/","");
+    return `<div class="pg-row">
+      <span class="pg-pair" title="${pair}">${shortPair}</span>
+      <div class="pg-cells">${cells}</div>
+    </div>`;
+  }).join("");
+
+  // Stats reset
+  document.getElementById("pg-scanned").textContent = "0";
+  document.getElementById("pg-signals").textContent = "0";
+  document.getElementById("pg-total").textContent   = pg.total;
+  document.getElementById("pg-pct").textContent     = "0%";
+  document.getElementById("pg-pct").className       = "pg-pct active";
+
+  // Bar
+  const fill = document.getElementById("pg-fill");
+  fill.style.width = "0%";
+  fill.className   = "pg-fill active";
+
+  // Radar
+  document.getElementById("pg-radar").className = "pg-radar active";
+
+  // Cursor
+  document.getElementById("pg-cursor").className   = "pg-cursor";
+  document.getElementById("pg-status-text").textContent = "Initialisation...";
+  document.getElementById("pg-elapsed").textContent = "00:00";
+
+  // Timer
+  pg.startMs = Date.now();
+  if (pg.timer) clearInterval(pg.timer);
+  pg.timer = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  const s = Math.floor((Date.now() - pg.startMs) / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  document.getElementById("pg-elapsed").textContent = `${mm}:${ss}`;
+}
+
+function cellId(pair, tf) {
+  return (pair + "_" + tf).replace(/[^a-zA-Z0-9]/g, "_");
+}
+
+function setCellState(pair, tf, state) {
+  const el = document.getElementById("cell-" + cellId(pair, tf));
+  if (el) el.dataset.state = state;
+}
+
+function setCurrent(pair, tf) {
+  // Mark previous cell as done
+  if (pg.curPair && pg.curTf) {
+    const prev = document.getElementById("cell-" + cellId(pg.curPair, pg.curTf));
+    if (prev && prev.dataset.state === "scanning") {
+      prev.dataset.state = "done";
+      pg.scanned++;
+      updatePgStats();
+    }
+  }
+  pg.curPair = pair;
+  pg.curTf   = tf;
+  setCellState(pair, tf, "scanning");
+  document.getElementById("pg-status-text").textContent = `${pair} | ${tf}`;
+}
+
+function markCurrentSignal() {
+  if (pg.curPair && pg.curTf) {
+    setCellState(pg.curPair, pg.curTf, "signal");
+    pg.scanned++;
+    pg.signals++;
+    pg.curPair = null; pg.curTf = null;
+    updatePgStats();
+  }
+}
+
+function markCurrentError() {
+  if (pg.curPair && pg.curTf) {
+    setCellState(pg.curPair, pg.curTf, "error");
+    pg.scanned++;
+    pg.curPair = null; pg.curTf = null;
+    updatePgStats();
+  }
+}
+
+function updatePgStats() {
+  document.getElementById("pg-scanned").textContent = pg.scanned;
+  document.getElementById("pg-signals").textContent = pg.signals;
+  const pct = pg.total ? Math.round(pg.scanned / pg.total * 100) : 0;
+  document.getElementById("pg-pct").textContent = pct + "%";
+  document.getElementById("pg-fill").style.width = pct + "%";
+}
+
+function finishProgress() {
+  // Mark last scanning cell as done
+  if (pg.curPair && pg.curTf) {
+    const el = document.getElementById("cell-" + cellId(pg.curPair, pg.curTf));
+    if (el && el.dataset.state === "scanning") {
+      el.dataset.state = "done";
+      pg.scanned++;
+    }
+    pg.curPair = null; pg.curTf = null;
+  }
+  // Fill all remaining empty as done
+  document.querySelectorAll(".pg-cell[data-state='empty']").forEach(el => {
+    el.dataset.state = "done";
+  });
+  document.querySelectorAll(".pg-cell[data-state='scanning']").forEach(el => {
+    el.dataset.state = "done";
+  });
+
+  // 100%
+  document.getElementById("pg-pct").textContent = "100%";
+  document.getElementById("pg-pct").className   = "pg-pct done";
+  document.getElementById("pg-fill").style.width = "100%";
+  document.getElementById("pg-fill").className  = "pg-fill done";
+  document.getElementById("pg-radar").className = "pg-radar done";
+  document.getElementById("pg-cursor").className = "pg-cursor done";
+  document.getElementById("pg-status-text").textContent = "Scan terminé";
+
+  if (pg.timer) { clearInterval(pg.timer); pg.timer = null; }
+}
+
+function parseLogForProgress(msg) {
+  // Detect pair|tf scanning start: "  📊 EUR/USD | 1h"
+  const mScan = msg.match(/📊\s+([A-Z/]+)\s+\|\s+(\w+)/);
+  if (mScan) {
+    setCurrent(mScan[1], mScan[2]);
+    return;
+  }
+  // Detect signal found
+  if (msg.includes("SIGNAL") || msg.includes("✅") || msg.includes("SNIPER")) {
+    markCurrentSignal();
+    return;
+  }
+  // Detect no data / error
+  if (msg.includes("Données insuffisantes") || msg.includes("ERROR") || msg.includes("Erreur")) {
+    markCurrentError();
+    return;
+  }
+}
+
+/* ════════════════════════════════════════════
+   SCAN
+════════════════════════════════════════════ */
 async function startScan() {
   if (scanning) return;
   const pair = document.getElementById("pair-sel").value;
   const tfs  = getTFs();
-  if (!tfs.length) { alert("Selectionne au moins un timeframe !"); return; }
+  if (!tfs.length) { alert("Sélectionne au moins un timeframe !"); return; }
 
   scanning = true;
   const btn = document.getElementById("scan-btn");
   btn.disabled = true;
-  btn.innerHTML = "<span style='display:inline-block;animation:spin .8s linear infinite'>&#9696;</span>&nbsp;Scan en cours...";
+  btn.innerHTML = "&#9696;&nbsp; Scan en cours...";
   btn.classList.add("running");
   setBadge("running", "Scan en cours...");
-  clearLogs();
-  log("[Sys] Demarrage...", "lx");
+
+  // Determine pairs to scan
+  const allPairs = [...document.querySelectorAll("#pair-sel option")].map(o => o.value).filter(v => v);
+  const scanPairs = pair ? [pair] : allPairs;
+
+  // Build progress grid
+  buildGrid(scanPairs, tfs);
   clearTable();
 
   try {
@@ -765,10 +1006,12 @@ async function startScan() {
     });
     const d = await r.json();
     scanId = d.scan_id;
-    log(`[Sys] Scan ID : ${scanId}`, "lx");
+    document.getElementById("pg-status-text").textContent = `ID: ${scanId.slice(0,8)}…`;
     openSSE(scanId);
   } catch(e) {
-    log(`[Sys] Erreur reseau : ${e.message}`, "le");
+    setBadge("error", "Erreur réseau");
+    document.getElementById("pg-status-text").textContent = "Erreur : " + e.message;
+    document.getElementById("pg-cursor").className = "pg-cursor idle";
     resetBtn();
   }
 }
@@ -779,15 +1022,13 @@ function openSSE(id) {
   es.onmessage = function(ev) {
     const m = ev.data;
     if (m === "__SCAN_DONE__") {
-      log("[Sys] Scan termine — chargement des signaux...", "lx");
       es.close(); es = null;
       fetchResults(id);
     } else if (m !== "__HEARTBEAT__") {
-      log(m);
+      parseLogForProgress(m);
     }
   };
   es.onerror = function() {
-    log("[Sys] Connexion perdue — recuperation des resultats...", "lw");
     if (es) { es.close(); es = null; }
     fetchResults(id);
   };
@@ -797,93 +1038,91 @@ async function fetchResults(id) {
   try {
     const r = await fetch(`/api/results/${id}`);
     const d = await r.json();
+    finishProgress();
     if (d.status === "error") {
       setBadge("error", "Erreur");
-      log(`[Sys] Erreur : ${d.error}`, "le");
+      document.getElementById("pg-status-text").textContent = "Erreur : " + d.error;
     } else {
       setBadge("done", `${d.count} signal(s)`);
-      log(`[Sys] ${d.count} signal(s) detecte(s).`, "lx");
-      renderTable(d.signals);
-      updateStats(d.signals);
+      // Mark signal cells green from real results
+      if (d.signals) {
+        d.signals.forEach(s => setCellState(s.pair, s.timeframe, "signal"));
+        document.getElementById("pg-signals").textContent = d.signals.length;
+      }
+      renderTable(d.signals || []);
+      updateTopStats(d.signals || []);
     }
   } catch(e) {
-    log(`[Sys] Erreur chargement : ${e.message}`, "le");
     setBadge("error", "Erreur");
+    document.getElementById("pg-status-text").textContent = "Erreur chargement";
   } finally {
     resetBtn();
   }
 }
 
-/* ── Table ────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   TABLE
+════════════════════════════════════════════ */
 function clearTable() {
   document.getElementById("tbody").innerHTML =
     `<tr><td colspan="12"><div class="empty">
-      <div class="empty-icon">&#x23F3;</div>
-      <div class="empty-title">Scan en cours...</div>
-      <div class="empty-sub">Les signaux apparaitront ici a la fin du scan</div>
+      <div class="empty-ico">&#x23F3;</div>
+      <div class="empty-t">Scan en cours...</div>
+      <div class="empty-s">Les signaux apparaîtront ici dès la fin du scan</div>
     </div></td></tr>`;
   document.getElementById("cnt").textContent = "0 signal";
-  updateStats([]);
+  document.getElementById("s-total").textContent = "0";
+  document.getElementById("s-long").textContent  = "0";
+  document.getElementById("s-short").textContent = "0";
+  document.getElementById("s-top").textContent   = "—";
 }
 
 function scorePips(val, max) {
-  let html = '<span class="score">';
+  let h = '<span class="score">';
   for (let i = 0; i < max; i++) {
-    let cls = "score-pip";
+    let c = "pip";
     if (i < val) {
-      cls += " on";
-      cls += (val >= 6) ? " hi" : (val <= 3 ? " lo" : "");
+      c += " on";
+      if (val >= max * .75) c += " g";
+      else if (val <= max * .375) c += " w";
     }
-    html += `<span class="${cls}"></span>`;
+    h += `<span class="${c}"></span>`;
   }
-  html += `</span>`;
-  return html;
+  return h + "</span>";
 }
 
 function renderTable(sigs) {
   if (!sigs.length) {
     document.getElementById("tbody").innerHTML =
       `<tr><td colspan="12"><div class="empty">
-        <div class="empty-icon">&#x1F6AB;</div>
-        <div class="empty-title">Aucun signal</div>
-        <div class="empty-sub">Aucun signal valide sur cette selection. Essaie d'autres paires ou timeframes.</div>
+        <div class="empty-ico">&#x1F6AB;</div>
+        <div class="empty-t">Aucun signal</div>
+        <div class="empty-s">Aucun signal valide sur cette sélection</div>
       </div></td></tr>`;
     return;
   }
-
-  document.getElementById("tbody").innerHTML = sigs.map((s, idx) => {
-    const dir = s.direction === "LONG"
-      ? `<span class="dir-badge dir-long">LONG</span>`
-      : `<span class="dir-badge dir-short">SHORT</span>`;
-
-    const comp = s.compression ? `&nbsp;<span class="fire">&#x1F525;</span>` : "";
-
-    /* TF badge — sniper for M15/M30 */
-    const isSniper = (s.timeframe === "15m" || s.timeframe === "30m");
-    const tfBadge  = `<span class="tf-badge${isSniper ? " sniper" : ""}">${s.timeframe}</span>`;
-
-    /* Score: extract number from reason string "XX/8" */
-    const scoreMatch = (s.confluence || "").match(/(\d+)\/(\d+)/);
-    const scoreVal   = scoreMatch ? parseInt(scoreMatch[1]) : 0;
-    const scoreMax   = scoreMatch ? parseInt(scoreMatch[2]) : 8;
-    const scoreHtml  = scorePips(scoreVal, scoreMax);
-
-    /* ADX */
-    const adx = s.adx >= 20
+  document.getElementById("tbody").innerHTML = sigs.map((s, i) => {
+    const isSniper = s.timeframe === "15m" || s.timeframe === "30m";
+    const dir  = s.direction === "LONG"
+      ? `<span class="dir-badge dL">LONG</span>`
+      : `<span class="dir-badge dS">SHORT</span>`;
+    const tfpill = `<span class="tf-pill${isSniper ? " sniper" : ""}">${s.timeframe}</span>`;
+    const comp = s.compression ? " &#x1F525;" : "";
+    const m    = (s.confluence || "").match(/(\d+)\/(\d+)/);
+    const sv   = m ? parseInt(m[1]) : 0;
+    const sm   = m ? parseInt(m[2]) : 8;
+    const adx  = s.adx >= 20
       ? `<span class="adx-ok">${s.adx}</span>`
       : `<span class="adx-low">${s.adx}</span>`;
-
-    /* Pine button */
     const pine = s.pine_file
       ? `<button class="pine-btn" onclick="event.stopPropagation();copyPine('${s.pine_file.split('/').pop()}',this)">Pine</button>`
       : "—";
-
-    return `<tr data-idx="${idx}" onclick="selectRow(this, '${s.pair}','${s.timeframe}',${s.entry},${s.sl},${s.tp1},${s.tp2},'${s.pattern || ""}',${s.zone_high},${s.zone_low},'${s.direction}')">
+    return `<tr data-i="${i}" onclick="selectRow(this,'${s.pair}','${s.timeframe}',${s.entry},${s.sl},${s.tp1},${s.tp2},'${s.pattern||""}',${s.zone_high},${s.zone_low},'${s.direction}')">
       <td class="pair-cell">${s.pair}</td>
-      <td>${tfBadge}</td>
-      <td class="pattern-cell">${s.pattern || "—"}${comp}</td>
+      <td>${tfpill}</td>
+      <td class="pat-cell">${s.pattern||"—"}${comp}</td>
       <td>${dir}</td>
-      <td>${scoreHtml}</td>
+      <td>${scorePips(sv, sm)}</td>
       <td class="pe">${s.entry}</td>
       <td class="ps">${s.sl}</td>
       <td class="pt1">${s.tp1}</td>
@@ -895,110 +1134,82 @@ function renderTable(sigs) {
   }).join("");
 }
 
-/* ── Chart ────────────────────────────────────────────────────────── */
-let chartInstance = null;
-
-function selectRow(tr, pair, tf, entry, sl, tp1, tp2, pattern, zoneHigh, zoneLow, direction) {
-  if (activeRow) activeRow.classList.remove("active-row");
-  tr.classList.add("active-row");
+/* ════════════════════════════════════════════
+   CHART
+════════════════════════════════════════════ */
+function selectRow(tr, pair, tf, entry, sl, tp1, tp2, pattern, zh, zl, dir) {
+  if (activeRow) activeRow.classList.remove("sel-row");
+  tr.classList.add("sel-row");
   activeRow = tr;
-  showChart(pair, tf, entry, sl, tp1, tp2, pattern, zoneHigh, zoneLow, direction);
+  showChart(pair, tf, entry, sl, tp1, tp2, pattern, zh, zl, dir);
 }
 
 function showChart(pair, tf, entry, sl, tp1, tp2, pattern, zoneHigh, zoneLow, direction) {
-  const section = document.getElementById("chart-section");
-  section.style.display = "block";
-
-  /* update header meta */
+  const sec = document.getElementById("chart-section");
+  sec.style.display = "block";
   document.getElementById("chart-pair").textContent = pair;
   document.getElementById("chart-tf").textContent   = tf;
-  document.getElementById("chart-levels").innerHTML =
-    `<span class="el">E: ${entry}</span>
-     <span class="sl">SL: ${sl}</span>
-     <span class="tp">TP1: ${tp1}</span>
-     <span class="tp">TP2: ${tp2}</span>`;
-
-  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("chart-lvls").innerHTML   =
+    `<span class="el">E: ${entry}</span><span class="sl">SL: ${sl}</span><span class="tp">TP1: ${tp1}</span><span class="tp">TP2: ${tp2}</span>`;
+  sec.scrollIntoView({ behavior: "smooth", block: "start" });
 
   if (chartInstance) { chartInstance.remove(); chartInstance = null; }
-
   const box = document.getElementById("chart-box");
-  box.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;">Chargement du graphique...</div>`;
+  box.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px">Chargement...</div>`;
 
   fetch(`/api/chart?pair=${encodeURIComponent(pair)}&timeframe=${tf}`)
     .then(r => r.json())
     .then(d => {
-      if (d.error) {
-        box.innerHTML = `<div style="padding:24px;color:var(--short)">${d.error}</div>`;
-        return;
-      }
-
+      if (d.error) { box.innerHTML = `<div style="padding:20px;color:var(--short)">${d.error}</div>`; return; }
       box.innerHTML = "";
       chartInstance = LightweightCharts.createChart(box, {
-        layout    : { background: { color: "#0b0e17" }, textColor: "#8b9bb4" },
-        grid      : { vertLines: { color: "#1a1e2e" }, horzLines: { color: "#1a1e2e" } },
+        layout    : { background:{ color:"#080c14" }, textColor:"#7a8fa8" },
+        grid      : { vertLines:{ color:"#111827" }, horzLines:{ color:"#111827" } },
         crosshair : { mode: LightweightCharts.CrosshairMode.Normal },
-        rightPriceScale: { borderColor: "#252d3d" },
-        timeScale : { borderColor: "#252d3d", timeVisible: true },
+        rightPriceScale: { borderColor:"#222c40" },
+        timeScale : { borderColor:"#222c40", timeVisible:true },
         width     : box.clientWidth,
-        height    : 460,
+        height    : 440,
       });
-
       const series = chartInstance.addCandlestickSeries({
-        upColor      : "#2dbb7a", downColor      : "#e85555",
-        borderUpColor: "#2dbb7a", borderDownColor: "#e85555",
-        wickUpColor  : "#2dbb7a", wickDownColor  : "#e85555",
+        upColor:"#25c47a", downColor:"#e84545",
+        borderUpColor:"#25c47a", borderDownColor:"#e84545",
+        wickUpColor:"#25c47a",   wickDownColor:"#e84545",
       });
       series.setData(d.candles);
-
-      /* ENTRY / SL / TP lines */
-      series.createPriceLine({ price: entry, color: "#4f8ef7", lineWidth: 2, lineStyle: 0, title: "ENTRY" });
-      series.createPriceLine({ price: sl,    color: "#e85555", lineWidth: 1, lineStyle: 2, title: "SL"    });
-      series.createPriceLine({ price: tp1,   color: "#f0a832", lineWidth: 1, lineStyle: 2, title: "TP1"   });
-      series.createPriceLine({ price: tp2,   color: "#2dbb7a", lineWidth: 1, lineStyle: 0, title: "TP2"   });
-
-      /* Zone de la figure */
+      series.createPriceLine({ price:entry, color:"#4f8ef7", lineWidth:2, lineStyle:0, title:"ENTRY" });
+      series.createPriceLine({ price:sl,    color:"#e84545", lineWidth:1, lineStyle:2, title:"SL"    });
+      series.createPriceLine({ price:tp1,   color:"#f0a832", lineWidth:1, lineStyle:2, title:"TP1"   });
+      series.createPriceLine({ price:tp2,   color:"#25c47a", lineWidth:1, lineStyle:0, title:"TP2"   });
       if (zoneHigh > 0 && zoneLow > 0 && zoneHigh !== zoneLow) {
-        const borderColor = direction === "LONG" ? "#2dbb7a" : "#e85555";
-        const label = pattern || "Zone";
-        series.createPriceLine({ price: zoneHigh, color: borderColor, lineWidth: 2, lineStyle: 3, title: `▲ ${label}` });
-        series.createPriceLine({ price: zoneLow,  color: borderColor, lineWidth: 2, lineStyle: 3, title: "▼ Zone" });
+        const bc = direction === "LONG" ? "#25c47a" : "#e84545";
+        series.createPriceLine({ price:zoneHigh, color:bc, lineWidth:2, lineStyle:3, title:`▲ ${pattern||"Zone"}` });
+        series.createPriceLine({ price:zoneLow,  color:bc, lineWidth:2, lineStyle:3, title:"▼ Zone" });
       }
-
       chartInstance.timeScale().fitContent();
-
-      /* Resize on window resize */
-      const resizeObs = new ResizeObserver(() => {
-        if (chartInstance) chartInstance.applyOptions({ width: box.clientWidth });
-      });
-      resizeObs.observe(box);
+      new ResizeObserver(() => { if (chartInstance) chartInstance.applyOptions({ width:box.clientWidth }); }).observe(box);
     })
-    .catch(e => {
-      box.innerHTML = `<div style="padding:24px;color:var(--short)">Erreur : ${e.message}</div>`;
-    });
+    .catch(e => { box.innerHTML = `<div style="padding:20px;color:var(--short)">Erreur : ${e.message}</div>`; });
 }
 
 function closeChart() {
   document.getElementById("chart-section").style.display = "none";
   if (chartInstance) { chartInstance.remove(); chartInstance = null; }
-  if (activeRow) { activeRow.classList.remove("active-row"); activeRow = null; }
+  if (activeRow) { activeRow.classList.remove("sel-row"); activeRow = null; }
 }
 
-/* ── Copy Pine ────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════
+   PINE COPY
+════════════════════════════════════════════ */
 async function copyPine(name, btn) {
   try {
     const r = await fetch(`/pine/${name}`);
     if (!r.ok) { alert("Fichier Pine introuvable."); return; }
     await navigator.clipboard.writeText(await r.text());
-    btn.textContent = "Copie !"; btn.classList.add("ok");
+    btn.textContent = "Copié !"; btn.classList.add("ok");
     setTimeout(() => { btn.textContent = "Pine"; btn.classList.remove("ok"); }, 2000);
   } catch(e) { alert("Erreur : " + e.message); }
 }
-
-/* ── CSS spin animation ───────────────────────────────────────────── */
-const style = document.createElement("style");
-style.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
-document.head.appendChild(style);
 </script>
 </body>
 </html>
