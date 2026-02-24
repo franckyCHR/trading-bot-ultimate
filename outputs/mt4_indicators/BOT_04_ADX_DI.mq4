@@ -1,8 +1,8 @@
 //+------------------------------------------------------------------+
 //|  BOT_04_ADX_DI.mq4                                              |
-//|  ADX + +DI / -DI avec alertes au croisement des DI              |
-//|  Ligne ADX en blanc — seuil 20 en pointillé                     |
-//|  +DI en bleu, -DI en rouge                                       |
+//|  ADX + +DI / -DI avec alertes au croisement                     |
+//|  Sous-fenêtre : ADX blanc | +DI bleu | -DI rouge                |
+//|  Seuil ADX 20 en pointillé jaune                                |
 //+------------------------------------------------------------------+
 #property copyright   "Trading Bot Ultimate"
 #property version     "1.00"
@@ -10,45 +10,21 @@
 #property indicator_minimum 0
 #property indicator_maximum 60
 #property indicator_buffers 5
-#property indicator_plots   5
-
-// ── Plot 1 : ADX ────────────────────────────────────────────────────────────
-#property indicator_label1  "ADX"
-#property indicator_type1   DRAW_LINE
-#property indicator_color1  clrWhite
-#property indicator_style1  STYLE_SOLID
+#property indicator_color1  White
+#property indicator_color2  DodgerBlue
+#property indicator_color3  Red
+#property indicator_color4  Lime
+#property indicator_color5  Red
 #property indicator_width1  2
-
-// ── Plot 2 : +DI ─────────────────────────────────────────────────────────────
-#property indicator_label2  "+DI"
-#property indicator_type2   DRAW_LINE
-#property indicator_color2  clrDodgerBlue
-#property indicator_style2  STYLE_SOLID
 #property indicator_width2  1
-
-// ── Plot 3 : -DI ─────────────────────────────────────────────────────────────
-#property indicator_label3  "-DI"
-#property indicator_type3   DRAW_LINE
-#property indicator_color3  clrOrangeRed
-#property indicator_style3  STYLE_SOLID
 #property indicator_width3  1
-
-// ── Plot 4 : Flèche croisement haussier (+DI > -DI) ──────────────────────────
-#property indicator_label4  "DI Cross Bull"
-#property indicator_type4   DRAW_ARROW
-#property indicator_color4  clrLimeGreen
 #property indicator_width4  2
-
-// ── Plot 5 : Flèche croisement baissier (-DI > +DI) ──────────────────────────
-#property indicator_label5  "DI Cross Bear"
-#property indicator_type5   DRAW_ARROW
-#property indicator_color5  clrTomato
 #property indicator_width5  2
 
 // ── Paramètres ──────────────────────────────────────────────────────────────
-input int    ADX_Period    = 14;   // Période ADX
-input double ADX_Threshold = 20;   // Seuil ADX (filtre momentum)
-input bool   EnableAlerts  = true; // Alertes au croisement des DI
+input int    ADX_Period     = 14;    // Période ADX
+input double ADX_Threshold  = 20.0;  // Seuil ADX minimum
+input bool   EnableAlerts   = true;  // Alertes au croisement des DI
 
 // ── Buffers ─────────────────────────────────────────────────────────────────
 double BufADX[];
@@ -60,50 +36,53 @@ double BufCrossDown[];
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   SetIndexBuffer(0, BufADX,       INDICATOR_DATA);
-   SetIndexBuffer(1, BufDIp,       INDICATOR_DATA);
-   SetIndexBuffer(2, BufDIm,       INDICATOR_DATA);
-   SetIndexBuffer(3, BufCrossUp,   INDICATOR_DATA);
-   SetIndexBuffer(4, BufCrossDown, INDICATOR_DATA);
+   SetIndexBuffer(0, BufADX);
+   SetIndexBuffer(1, BufDIp);
+   SetIndexBuffer(2, BufDIm);
+   SetIndexBuffer(3, BufCrossUp);
+   SetIndexBuffer(4, BufCrossDown);
 
-   PlotIndexSetInteger(3, PLOT_ARROW, 233); // flèche haut
-   PlotIndexSetInteger(4, PLOT_ARROW, 234); // flèche bas
+   SetIndexStyle(0, DRAW_LINE,  STYLE_SOLID, 2, White);
+   SetIndexStyle(1, DRAW_LINE,  STYLE_SOLID, 1, DodgerBlue);
+   SetIndexStyle(2, DRAW_LINE,  STYLE_SOLID, 1, Red);
+   SetIndexStyle(3, DRAW_ARROW, STYLE_SOLID, 2, Lime);
+   SetIndexStyle(4, DRAW_ARROW, STYLE_SOLID, 2, Red);
 
-   ArraySetAsSeries(BufADX,       true);
-   ArraySetAsSeries(BufDIp,       true);
-   ArraySetAsSeries(BufDIm,       true);
-   ArraySetAsSeries(BufCrossUp,   true);
-   ArraySetAsSeries(BufCrossDown, true);
+   SetIndexArrow(3, 233);  // flèche haut ↑
+   SetIndexArrow(4, 234);  // flèche bas  ↓
 
-   // Ligne de seuil à 20 (niveau horizontal)
-   string lineNom = "ADX_Level20";
-   if (ObjectFind(0, lineNom) < 0)
-      ObjectCreate(0, lineNom, OBJ_HLINE, ChartWindowFind(), ADX_Threshold, 0);
-   ObjectSetInteger(0, lineNom, OBJPROP_COLOR,     clrYellow);
-   ObjectSetInteger(0, lineNom, OBJPROP_STYLE,     STYLE_DOT);
-   ObjectSetInteger(0, lineNom, OBJPROP_WIDTH,     1);
-   ObjectSetString(0,  lineNom, OBJPROP_TEXT,      "ADX 20");
+   SetIndexEmptyValue(3, EMPTY_VALUE);
+   SetIndexEmptyValue(4, EMPTY_VALUE);
 
-   IndicatorSetString(INDICATOR_SHORTNAME, StringFormat("ADX(%d) + DI", ADX_Period));
+   SetIndexLabel(0, "ADX");
+   SetIndexLabel(1, "+DI");
+   SetIndexLabel(2, "-DI");
+   SetIndexLabel(3, "DI+ Cross");
+   SetIndexLabel(4, "DI- Cross");
+
+   IndicatorShortName(StringFormat("ADX(%d) + DI", ADX_Period));
+
+   // ── Seuil ADX 20 en pointillé (dans la sous-fenêtre) ────────────
+   IndicatorSetInteger(INDICATOR_LEVELS,        1);
+   IndicatorSetDouble (INDICATOR_LEVELVALUE, 0, ADX_Threshold);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR, 0, clrYellow);
+   IndicatorSetInteger(INDICATOR_LEVELSTYLE, 0, STYLE_DOT);
+   IndicatorSetInteger(INDICATOR_LEVELWIDTH, 0, 1);
+
    return(INIT_SUCCEEDED);
-}
-
-void OnDeinit(const int reason)
-{
-   ObjectDelete(0, "ADX_Level20");
 }
 
 //+------------------------------------------------------------------+
 int OnCalculate(const int rates_total,
                 const int prev_calculated,
                 const datetime &time[],
-                const double &open[],
-                const double &high[],
-                const double &low[],
-                const double &close[],
-                const long &tick_volume[],
-                const long &volume[],
-                const int &spread[])
+                const double   &open[],
+                const double   &high[],
+                const double   &low[],
+                const double   &close[],
+                const long     &tick_volume[],
+                const long     &volume[],
+                const int      &spread[])
 {
    if (rates_total < ADX_Period * 2) return(0);
 
@@ -112,38 +91,55 @@ int OnCalculate(const int rates_total,
 
    for (int i = limit - 1; i >= 0; i--)
    {
-      // Utilise les fonctions MT4 intégrées pour ADX / DI
-      BufADX[i] = iADX(NULL, 0, ADX_Period, PRICE_CLOSE, MODE_MAIN,   i);
-      BufDIp[i] = iADX(NULL, 0, ADX_Period, PRICE_CLOSE, MODE_PLUSDI, i);
+      BufADX[i] = iADX(NULL, 0, ADX_Period, PRICE_CLOSE, MODE_MAIN,    i);
+      BufDIp[i] = iADX(NULL, 0, ADX_Period, PRICE_CLOSE, MODE_PLUSDI,  i);
       BufDIm[i] = iADX(NULL, 0, ADX_Period, PRICE_CLOSE, MODE_MINUSDI, i);
 
       BufCrossUp[i]   = EMPTY_VALUE;
       BufCrossDown[i] = EMPTY_VALUE;
 
-      if (i < rates_total - 1)
+      if (i + 1 < rates_total)
       {
-         bool prevDIpDom = BufDIp[i+1] >= BufDIm[i+1];
-         bool curDIpDom  = BufDIp[i]   >  BufDIm[i];
+         bool prevBull = (BufDIp[i+1] >= BufDIm[i+1]);
+         bool curBull  = (BufDIp[i]   >  BufDIm[i]);
 
-         // +DI croise au-dessus de -DI → signal haussier
-         if (curDIpDom && !prevDIpDom && BufADX[i] >= ADX_Threshold)
+         // +DI passe au-dessus de -DI → haussier
+         if (curBull && !prevBull && BufADX[i] >= ADX_Threshold)
          {
             BufCrossUp[i] = ADX_Threshold - 3;
             if (EnableAlerts && i == 0)
-               Alert("BOT_04 — DI+ croise DI- vers le haut | ADX=", DoubleToString(BufADX[i],1),
-                     " | ", Symbol(), " ", Period());
+               Alert("BOT_04 — DI+ > DI-  | ADX=", DoubleToStr(BufADX[i], 1),
+                     " | ", Symbol(), " ", GetTFName());
          }
 
-         // -DI croise au-dessus de +DI → signal baissier
-         if (!curDIpDom && prevDIpDom && BufADX[i] >= ADX_Threshold)
+         // -DI passe au-dessus de +DI → baissier
+         if (!curBull && prevBull && BufADX[i] >= ADX_Threshold)
          {
             BufCrossDown[i] = ADX_Threshold + 3;
             if (EnableAlerts && i == 0)
-               Alert("BOT_04 — DI- croise DI+ vers le haut | ADX=", DoubleToString(BufADX[i],1),
-                     " | ", Symbol(), " ", Period());
+               Alert("BOT_04 — DI- > DI+  | ADX=", DoubleToStr(BufADX[i], 1),
+                     " | ", Symbol(), " ", GetTFName());
          }
       }
    }
 
    return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+string GetTFName()
+{
+   switch(Period())
+   {
+      case 1:     return "M1";
+      case 5:     return "M5";
+      case 15:    return "M15";
+      case 30:    return "M30";
+      case 60:    return "H1";
+      case 240:   return "H4";
+      case 1440:  return "D1";
+      case 10080: return "W1";
+      case 43200: return "MN";
+      default:    return IntegerToString(Period());
+   }
 }
