@@ -8,21 +8,22 @@
 <style>
 /* ── Variables ───────────────────────────────────────────────────── */
 :root {
-  --bg:       #080c14;
-  --bg2:      #0e1220;
-  --panel:    #141927;
-  --panel2:   #1a2133;
-  --border:   #222c40;
-  --border2:  #2b3650;
-  --text:     #c8d4e8;
-  --muted:    #5c6e8a;
-  --accent:   #4f8ef7;
+  --bg:       #0d0d0d;
+  --bg2:      #141414;
+  --panel:    #1a1a1a;
+  --panel2:   #222222;
+  --border:   #2a2a2a;
+  --border2:  #333333;
+  --text:     #e0e0e0;
+  --muted:    #666666;
+  --accent:   #4f8ef7;   /* bleu — ENTRY, scan actif        */
   --accent2:  #3570d4;
-  --long:     #25c47a;
-  --long-bg:  #0a2418;
-  --short:    #e84545;
-  --short-bg: #2a0d0d;
-  --warn:     #f0a832;
+  --long:     #2dcc74;   /* vert — LONG, signal, TP         */
+  --long-bg:  #0a1f12;
+  --short:    #e84545;   /* rouge — SHORT, SL               */
+  --short-bg: #200a0a;
+  --warn:     #f5a623;   /* orange — TP1, avertissements    */
+  --purple:   #9b7ef5;   /* violet — sniper M15/M30         */
   --radius:   10px;
   --rsm:      6px;
 }
@@ -109,7 +110,7 @@ body {
   border-radius: 20px;
   display: none;
 }
-.badge.running { background:#162040; color:var(--accent); border:1px solid #2a4070; display:inline; }
+.badge.running { background:#1e2a1e; color:var(--accent); border:1px solid #2a3a2a; display:inline; }
 .badge.done    { background:var(--long-bg); color:var(--long); border:1px solid #1a4030; display:inline; }
 .badge.error   { background:var(--short-bg); color:var(--short); border:1px solid #401a1a; display:inline; }
 
@@ -159,7 +160,7 @@ select:focus { border-color: var(--accent); }
   transition: all .15s;
 }
 .tf-lbl input { display: none; }
-.tf-lbl.on { border-color: var(--accent); background: #162040; color: var(--accent); }
+.tf-lbl.on { border-color: var(--accent); background: #1a1a1a; color: var(--accent); }
 .tf-lbl:hover:not(.on) { border-color: var(--border2); }
 
 #scan-btn {
@@ -389,7 +390,7 @@ select:focus { border-color: var(--accent); }
 }
 /* States */
 .pg-cell[data-state="scanning"] {
-  background: #162040;
+  background: #111a22;
   border-color: var(--accent);
   box-shadow: 0 0 6px rgba(79,142,247,.35);
   animation: cellscan 1s ease-in-out infinite;
@@ -522,7 +523,7 @@ tbody tr {
 }
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover    { background: var(--panel); }
-tbody tr.sel-row  { background: #162040 !important; }
+tbody tr.sel-row  { background: #222222 !important; }
 tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
 
 .dir-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; }
@@ -533,7 +534,7 @@ tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
 
 .pair-cell { font-weight:700; color:#dce8fa; }
 .tf-pill   { display:inline-block; background:var(--panel2); color:var(--muted); padding:2px 6px; border-radius:4px; font-size:9.5px; font-weight:700; border:1px solid var(--border); }
-.tf-pill.sniper { background:#1a1640; color:#9b89f5; border-color:rgba(155,137,245,.3); }
+.tf-pill.sniper { background:#1a1030; color:var(--purple); border-color:rgba(155,137,245,.3); }
 .pat-cell { color:#9fb0c8; }
 
 .pe  { color:var(--accent); font-weight:600; font-variant-numeric:tabular-nums; }
@@ -552,7 +553,7 @@ tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
 .pip.on.w { background:var(--warn); }
 
 .pine-btn { background:var(--panel2); color:var(--accent); border:1px solid var(--border2); padding:2px 8px; font-size:10px; font-weight:500; border-radius:4px; cursor:pointer; font-family:inherit; transition:all .15s; }
-.pine-btn:hover { background:#162040; border-color:var(--accent); }
+.pine-btn:hover { background:#1e2a1e; border-color:var(--accent); }
 .pine-btn.ok { background:var(--long-bg); color:var(--long); border-color:var(--long); }
 
 .empty { text-align:center; padding:48px 20px; color:var(--muted); }
@@ -1164,10 +1165,10 @@ function showChart(pair, tf, entry, sl, tp1, tp2, pattern, zoneHigh, zoneLow, di
       box.innerHTML = "";
       chartInstance = LightweightCharts.createChart(box, {
         layout    : { background:{ color:"#080c14" }, textColor:"#7a8fa8" },
-        grid      : { vertLines:{ color:"#111827" }, horzLines:{ color:"#111827" } },
+        grid      : { vertLines:{ color:"#1a1a1a" }, horzLines:{ color:"#1a1a1a" } },
         crosshair : { mode: LightweightCharts.CrosshairMode.Normal },
-        rightPriceScale: { borderColor:"#222c40" },
-        timeScale : { borderColor:"#222c40", timeVisible:true },
+        rightPriceScale: { borderColor:"#2a2a2a" },
+        timeScale : { borderColor:"#2a2a2a", timeVisible:true },
         width     : box.clientWidth,
         height    : 440,
       });
