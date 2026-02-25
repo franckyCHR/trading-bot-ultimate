@@ -602,6 +602,216 @@ tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
   tbody td:nth-child(9), tbody td:nth-child(11) { display:none; }
   #chart-box { height:300px; }
 }
+
+/* ═══════════════════════════════════════════
+   VISUAL ANALYSIS SECTION
+═══════════════════════════════════════════ */
+.va-section {
+  margin: 0; border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.va-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 20px; cursor: pointer; user-select: none;
+}
+.va-header:hover { background: var(--panel); }
+.va-title { font-size: 13px; font-weight: 600; color: var(--accent); }
+.va-toggle { color: var(--muted); font-size: 11px; transition: transform .2s; }
+.va-body { padding: 12px 20px 16px; }
+.va-row {
+  display: grid; grid-template-columns: 1fr 260px; gap: 16px;
+  align-items: start;
+}
+.va-drop {
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  background: var(--panel); min-height: 140px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .2s, background .2s;
+}
+.va-drop.over { border-color: var(--accent); background: rgba(79,142,247,.05); }
+.va-drop.has-file { border-color: var(--long); border-style: solid; }
+.va-drop-inner { text-align: center; padding: 20px; }
+.va-drop-ico { font-size: 28px; margin-bottom: 6px; }
+.va-drop-txt { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+.va-drop-sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.va-browse {
+  background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+  padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+}
+.va-browse:hover { background: var(--border); }
+.va-preview { max-width: 100%; max-height: 120px; border-radius: 6px; margin-top: 8px; }
+.va-config { display: flex; flex-direction: column; gap: 8px; }
+.va-field label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 2px; }
+.va-field select {
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  background: var(--panel); border: 1px solid var(--border2);
+  color: var(--text); font-size: 12px;
+}
+.va-btn {
+  padding: 8px 0; border-radius: 8px; border: none; font-size: 13px;
+  font-weight: 600; cursor: pointer; width: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; transition: opacity .2s;
+}
+.va-btn:disabled { opacity: .4; cursor: not-allowed; }
+.va-btn:hover:not(:disabled) { opacity: .85; }
+.va-btn.running { background: var(--warn); animation: btnshine 1.5s infinite; }
+.va-status { font-size: 11px; color: var(--muted); text-align: center; min-height: 16px; }
+
+.va-results { margin-top: 12px; }
+.va-result-card {
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 16px;
+}
+.va-score { font-size: 20px; font-weight: 700; margin-right: 8px; }
+.va-score.high { color: var(--long); }
+.va-score.mid  { color: var(--warn); }
+.va-score.low  { color: var(--short); }
+.va-dir { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.va-dir.LONG  { background: var(--long-bg); color: var(--long); }
+.va-dir.SHORT { background: var(--short-bg); color: var(--short); }
+.va-dir.NEUTRAL { background: var(--panel2); color: var(--muted); }
+.va-summary { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.va-prices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.va-price { background: var(--bg); border-radius: 6px; padding: 8px; text-align: center; }
+.va-price .lbl { font-size: 10px; color: var(--muted); }
+.va-price .val { font-size: 14px; font-weight: 600; }
+.va-price.entry .val { color: var(--accent); }
+.va-price.sl .val    { color: var(--short); }
+.va-price.tp1 .val   { color: var(--warn); }
+.va-price.tp2 .val   { color: var(--long); }
+.va-warnings { margin-top: 8px; font-size: 11px; color: var(--warn); }
+
+.va-gallery {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px; margin-top: 12px;
+}
+.va-thumb {
+  position: relative; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border); cursor: pointer; transition: border-color .2s;
+}
+.va-thumb:hover { border-color: var(--accent); }
+.va-thumb img { width: 100%; height: 80px; object-fit: cover; display: block; }
+.va-thumb-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,.7); padding: 3px 6px;
+  font-size: 10px; color: #ccc;
+}
+
+@media (max-width: 620px) {
+  .va-row { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════
+   ANALYSIS DASHBOARD CARDS
+═══════════════════════════════════════════ */
+.dash-section {
+  border-bottom: 1px solid var(--border); background: var(--bg2);
+}
+.dash-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 20px; cursor: pointer; user-select: none;
+}
+.dash-header:hover { background: var(--panel); }
+.dash-title { font-size: 13px; font-weight: 600; color: var(--long); }
+.dash-toggle { color: var(--muted); font-size: 11px; }
+.dash-body { padding: 12px 20px 16px; }
+.dash-toolbar {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.dash-toolbar button {
+  background: var(--panel2); border: 1px solid var(--border2); color: var(--text);
+  padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px;
+}
+.dash-toolbar button:hover { background: var(--border); }
+.dash-toolbar .count { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+.dash-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+.acard {
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 14px; position: relative;
+  transition: border-color .2s;
+}
+.acard:hover { border-color: var(--accent); }
+.acard-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 10px;
+}
+.acard-pair { font-size: 15px; font-weight: 700; color: var(--text); }
+.acard-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.acard-score {
+  font-size: 22px; font-weight: 800; min-width: 50px; text-align: center;
+  padding: 2px 8px; border-radius: 8px;
+}
+.acard-score.s-high { color: var(--long); background: var(--long-bg); }
+.acard-score.s-mid  { color: var(--warn); background: rgba(245,166,35,.1); }
+.acard-score.s-low  { color: var(--short); background: var(--short-bg); }
+
+.acard-dir {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 11px; font-weight: 700; margin-bottom: 8px;
+}
+.acard-dir.LONG  { background: var(--long-bg); color: var(--long); }
+.acard-dir.SHORT { background: var(--short-bg); color: var(--short); }
+.acard-dir.NEUTRAL { background: var(--panel2); color: var(--muted); }
+
+.acard-pattern { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+
+.acard-levels {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  margin: 8px 0;
+}
+.acard-lv {
+  background: var(--bg); border-radius: 6px; padding: 6px 4px;
+  text-align: center;
+}
+.acard-lv .k { font-size: 9px; color: var(--muted); text-transform: uppercase; }
+.acard-lv .v { font-size: 12px; font-weight: 600; }
+.acard-lv.entry .v { color: var(--accent); }
+.acard-lv.sl .v    { color: var(--short); }
+.acard-lv.tp1 .v   { color: var(--warn); }
+.acard-lv.tp2 .v   { color: var(--long); }
+
+.acard-gates {
+  display: flex; gap: 6px; margin: 6px 0;
+}
+.acard-gate {
+  font-size: 10px; padding: 2px 8px; border-radius: 8px; font-weight: 600;
+}
+.acard-gate.ok   { background: rgba(45,204,116,.12); color: var(--long); }
+.acard-gate.fail { background: rgba(232,69,69,.12); color: var(--short); }
+
+.acard-indics {
+  display: flex; gap: 4px; flex-wrap: wrap; margin: 6px 0;
+}
+.acard-ind {
+  font-size: 10px; padding: 2px 6px; border-radius: 6px;
+  background: var(--bg); color: var(--muted);
+}
+.acard-ind.active { color: var(--accent); }
+
+.acard-summary {
+  font-size: 11px; color: var(--muted); line-height: 1.5;
+  margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;
+}
+.acard-warn { font-size: 10px; color: var(--warn); margin-top: 4px; }
+.acard-time { font-size: 10px; color: var(--border2); margin-top: 6px; }
+
+.acard-thumb {
+  width: 100%; max-height: 140px; object-fit: cover;
+  border-radius: 6px; margin-bottom: 8px; border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.dash-empty {
+  text-align: center; color: var(--muted); padding: 40px;
+  font-size: 13px;
+}
+.dash-empty-ico { font-size: 32px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -643,6 +853,82 @@ tbody td { padding: 8px 11px; vertical-align: middle; white-space: nowrap; }
     </div>
   </div>
   <button id="scan-btn" onclick="startScan()">&#x1F50D;&nbsp; Lancer le scan</button>
+</div>
+
+<!-- ═══════════ VISUAL ANALYSIS ═══════════ -->
+<div class="va-section">
+  <div class="va-header" onclick="toggleVA()">
+    <span class="va-title">&#x1F4F8; Analyse Visuelle</span>
+    <span class="va-toggle" id="va-toggle">&#x25BC;</span>
+  </div>
+  <div class="va-body" id="va-body" style="display:none">
+    <div class="va-row">
+      <!-- Drop zone -->
+      <div class="va-drop" id="va-drop"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="handleDrop(event)">
+        <div class="va-drop-inner">
+          <div class="va-drop-ico">&#x1F4E4;</div>
+          <div class="va-drop-txt">Glisse ton screenshot ici</div>
+          <div class="va-drop-sub">PNG / JPG — MT4 ou TradingView</div>
+          <input type="file" id="va-file" accept="image/*" style="display:none" onchange="handleFileSelect(this)">
+          <button class="va-browse" onclick="document.getElementById('va-file').click()">Parcourir</button>
+        </div>
+      </div>
+      <!-- Config -->
+      <div class="va-config">
+        <div class="va-field">
+          <label>Paire</label>
+          <select id="va-pair">
+            {% for pair in pairs %}<option value="{{ pair }}">{{ pair }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="va-field">
+          <label>Timeframe</label>
+          <select id="va-tf">
+            <option>M15</option><option>M30</option><option selected>H1</option><option>H4</option><option>D1</option>
+          </select>
+        </div>
+        <div class="va-field">
+          <label>Template</label>
+          <select id="va-template">
+            <option>Momentum</option><option>RSI</option><option>EXTREM_MONEY</option><option>Harmoniques</option>
+          </select>
+        </div>
+        <button class="va-btn" id="va-btn" onclick="uploadImage()" disabled>&#x1F4E4; Sauvegarder</button>
+        <div class="va-status" id="va-status"></div>
+      </div>
+    </div>
+    <!-- Results -->
+    <div class="va-results" id="va-results" style="display:none">
+      <div class="va-result-card" id="va-result-card"></div>
+    </div>
+    <!-- Gallery -->
+    <div class="va-gallery" id="va-gallery"></div>
+  </div>
+</div>
+
+<!-- ═══════════ ANALYSIS DASHBOARD ═══════════ -->
+<div class="dash-section">
+  <div class="dash-header" onclick="toggleDash()">
+    <span class="dash-title">&#x1F4CA; Dashboard Analyses Visuelles</span>
+    <span class="dash-toggle" id="dash-toggle">&#x25BC;</span>
+  </div>
+  <div class="dash-body" id="dash-body" style="display:none">
+    <div class="dash-toolbar">
+      <button onclick="loadAnalyses()">&#x1F504; Rafraichir</button>
+      <button onclick="clearAnalyses()">&#x1F5D1; Vider</button>
+      <span class="count" id="dash-count">0 analyse(s)</span>
+    </div>
+    <div class="dash-grid" id="dash-grid">
+      <div class="dash-empty">
+        <div class="dash-empty-ico">&#x1F4CA;</div>
+        Aucune analyse pour l'instant.<br>
+        Analyse un screenshot dans Claude Code, les résultats s'afficheront ici.
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════ BODY ═══════════ -->
@@ -1210,6 +1496,254 @@ async function copyPine(name, btn) {
     btn.textContent = "Copié !"; btn.classList.add("ok");
     setTimeout(() => { btn.textContent = "Pine"; btn.classList.remove("ok"); }, 2000);
   } catch(e) { alert("Erreur : " + e.message); }
+}
+
+/* ════════════════════════════════════════════
+   VISUAL ANALYSIS
+════════════════════════════════════════════ */
+let vaFile = null;
+let vaAnalyzing = false;
+
+function toggleVA() {
+  const body = document.getElementById("va-body");
+  const toggle = document.getElementById("va-toggle");
+  if (body.style.display === "none") {
+    body.style.display = "block";
+    toggle.innerHTML = "&#x25B2;";
+    loadGallery();
+  } else {
+    body.style.display = "none";
+    toggle.innerHTML = "&#x25BC;";
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("over");
+  const files = e.dataTransfer.files;
+  if (files.length > 0) setVAFile(files[0]);
+}
+
+function handleFileSelect(input) {
+  if (input.files.length > 0) setVAFile(input.files[0]);
+}
+
+function setVAFile(file) {
+  if (!file.type.startsWith("image/")) {
+    document.getElementById("va-status").textContent = "Fichier non valide (image requise)";
+    return;
+  }
+  vaFile = file;
+  const drop = document.getElementById("va-drop");
+  drop.classList.add("has-file");
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    drop.querySelector(".va-drop-inner").innerHTML =
+      `<img class="va-preview" src="${e.target.result}" alt="preview">
+       <div class="va-drop-txt" style="margin-top:6px">${file.name}</div>
+       <button class="va-browse" onclick="event.stopPropagation();document.getElementById('va-file').click()">Changer</button>`;
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById("va-btn").disabled = false;
+  document.getElementById("va-status").textContent = "";
+}
+
+async function uploadImage() {
+  if (!vaFile || vaAnalyzing) return;
+  vaAnalyzing = true;
+
+  const btn = document.getElementById("va-btn");
+  btn.disabled = true;
+  btn.innerHTML = "&#x23F3; Upload...";
+  document.getElementById("va-status").textContent = "Envoi de l'image...";
+
+  const pair = document.getElementById("va-pair").value;
+  const tf = document.getElementById("va-tf").value;
+  const template = document.getElementById("va-template").value;
+
+  const formData = new FormData();
+  formData.append("file", vaFile);
+  formData.append("pair", pair);
+  formData.append("timeframe", tf);
+  formData.append("template", template);
+
+  try {
+    const r = await fetch("/api/analyze-image", { method: "POST", body: formData });
+    const d = await r.json();
+
+    if (d.error) {
+      document.getElementById("va-status").textContent = "Erreur: " + d.error;
+    } else {
+      document.getElementById("va-status").innerHTML =
+        `Screenshot sauvegard&eacute; : <strong>${d.image}</strong><br>` +
+        `<span style="color:var(--long)">Pour analyser → Claude Code : "Analyse outputs/screenshots/${d.image}"</span>`;
+      loadGallery();
+    }
+  } catch(e) {
+    document.getElementById("va-status").textContent = "Erreur: " + e.message;
+  }
+
+  btn.innerHTML = "&#x1F4E4; Sauvegarder";
+  btn.disabled = false;
+  vaAnalyzing = false;
+  vaFile = null;
+}
+
+/* ════════════════════════════════════════════
+   ANALYSIS DASHBOARD
+════════════════════════════════════════════ */
+function toggleDash() {
+  const body = document.getElementById("dash-body");
+  const toggle = document.getElementById("dash-toggle");
+  if (body.style.display === "none") {
+    body.style.display = "block";
+    toggle.innerHTML = "&#x25B2;";
+    loadAnalyses();
+  } else {
+    body.style.display = "none";
+    toggle.innerHTML = "&#x25BC;";
+  }
+}
+
+async function loadAnalyses() {
+  try {
+    const r = await fetch("/api/analyses");
+    const d = await r.json();
+    const grid = document.getElementById("dash-grid");
+    document.getElementById("dash-count").textContent = d.count + " analyse(s)";
+
+    if (!d.analyses || !d.analyses.length) {
+      grid.innerHTML = `<div class="dash-empty">
+        <div class="dash-empty-ico">&#x1F4CA;</div>
+        Aucune analyse pour l'instant.<br>
+        Analyse un screenshot dans Claude Code, les r&eacute;sultats s'afficheront ici.
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = d.analyses.map(a => buildAnalysisCard(a)).join("");
+  } catch(e) {
+    console.error("loadAnalyses error:", e);
+  }
+}
+
+function buildAnalysisCard(a) {
+  const score = a.confluence_score || 0;
+  const sClass = score >= 7 ? "s-high" : score >= 5 ? "s-mid" : "s-low";
+  const dir = a.direction || "NEUTRAL";
+  const pair = a.pair || "?";
+  const tf = a.timeframe || "?";
+  const tpl = a.template || "";
+  const pattern = a.pattern || "—";
+  const entry = a.entry || 0;
+  const sl = a.sl || 0;
+  const tp1 = a.tp1 || 0;
+  const tp2 = a.tp2 || 0;
+  const rr = a.rr_ratio || 0;
+  const summary = a.summary || "";
+  const warnings = a.warnings || [];
+  const ts = a.timestamp || "";
+  const img = a.image_path || "";
+
+  // Thumbnail
+  let thumbHtml = "";
+  if (img) {
+    const fname = img.split("/").pop();
+    thumbHtml = `<img class="acard-thumb" src="/screenshots/${fname}" alt="" onerror="this.style.display='none'">`;
+  }
+
+  // Gates
+  const g1 = a.gate1_sr;
+  const g2 = a.gate2_pattern;
+  const g1ok = g1 && g1 !== "" && g1 !== "false";
+  const g2ok = g2 && g2 !== "" && g2 !== "false";
+  const gatesHtml = `
+    <div class="acard-gates">
+      <span class="acard-gate ${g1ok ? 'ok' : 'fail'}">P1 S/R ${g1ok ? '&#x2714;' : '&#x2718;'}</span>
+      <span class="acard-gate ${g2ok ? 'ok' : 'fail'}">P2 Pattern ${g2ok ? '&#x2714;' : '&#x2718;'}</span>
+    </div>`;
+
+  // Levels
+  let levelsHtml = "";
+  if (entry > 0) {
+    const fmt = (v) => Number(v).toFixed(v > 100 ? 1 : 4);
+    levelsHtml = `
+      <div class="acard-levels">
+        <div class="acard-lv entry"><div class="k">Entry</div><div class="v">${fmt(entry)}</div></div>
+        <div class="acard-lv sl"><div class="k">SL</div><div class="v">${fmt(sl)}</div></div>
+        <div class="acard-lv tp1"><div class="k">TP1</div><div class="v">${fmt(tp1)}</div></div>
+        <div class="acard-lv tp2"><div class="k">TP2</div><div class="v">${fmt(tp2)}</div></div>
+      </div>`;
+  }
+
+  // Indicators
+  let indics = [];
+  if (a.adx)       indics.push(`ADX ${a.adx}`);
+  if (a.rsi)       indics.push(`RSI ${a.rsi}`);
+  if (a.qqe)       indics.push(`QQE ${a.qqe}`);
+  if (a.ema)       indics.push(`EMA ${a.ema}`);
+  if (a.ichimoku)  indics.push(`Ichi ${a.ichimoku}`);
+  if (a.harmonics) indics.push(`Harmo ${a.harmonics}`);
+  if (a.compression) indics.push("Compression");
+  const indicsHtml = indics.length
+    ? `<div class="acard-indics">${indics.map(i => `<span class="acard-ind active">${i}</span>`).join("")}</div>`
+    : "";
+
+  // Warnings
+  const warnHtml = warnings.length
+    ? `<div class="acard-warn">&#x26A0; ${warnings.join(" | ")}</div>`
+    : "";
+
+  return `
+  <div class="acard">
+    ${thumbHtml}
+    <div class="acard-top">
+      <div>
+        <div class="acard-pair">${pair}</div>
+        <div class="acard-meta">${tf} ${tpl ? '| ' + tpl : ''} ${rr ? '| RR 1:' + rr : ''}</div>
+      </div>
+      <div class="acard-score ${sClass}">${score}</div>
+    </div>
+    <span class="acard-dir ${dir}">${dir}</span>
+    <div class="acard-pattern">${pattern}</div>
+    ${gatesHtml}
+    ${levelsHtml}
+    ${indicsHtml}
+    <div class="acard-summary">${summary}</div>
+    ${warnHtml}
+    <div class="acard-time">${ts}</div>
+  </div>`;
+}
+
+async function clearAnalyses() {
+  if (!confirm("Supprimer toutes les analyses ?")) return;
+  await fetch("/api/analyses/clear", { method: "POST" });
+  loadAnalyses();
+}
+
+async function loadGallery() {
+  try {
+    const r = await fetch("/api/screenshots");
+    const d = await r.json();
+    const gallery = document.getElementById("va-gallery");
+
+    if (!d.screenshots || !d.screenshots.length) {
+      gallery.innerHTML = "";
+      return;
+    }
+
+    gallery.innerHTML = d.screenshots.slice(0, 12).map(s =>
+      `<div class="va-thumb" title="${s.filename}">
+        <img src="/screenshots/${s.filename}" alt="${s.filename}">
+        <div class="va-thumb-info">${s.filename.split("_").slice(0,2).join(" ")} &middot; ${s.size_kb}KB</div>
+      </div>`
+    ).join("");
+  } catch(e) {
+    // silent
+  }
 }
 </script>
 </body>

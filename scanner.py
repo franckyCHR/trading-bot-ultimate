@@ -2,10 +2,24 @@
 scanner.py
 ──────────
 Scanner principal du bot.
-Boucle toutes les 15 minutes sur toutes les paires et timeframes.
-Pipeline : Data → Détection → Validation → Entrée → Dessin → Alerte → Dashboard
+3 modes :
+  - api-scan  : boucle yfinance toutes les 15 min (existant)
+  - manual    : enregistre un screenshot → prêt pour analyse Claude Code
+  - semi-auto : capture écran Mac → circuit templates x TF → prêt pour Claude Code
+  - batch     : prépare tous les screenshots d'un dossier pour analyse
+
+L'analyse visuelle se fait directement dans Claude Code (pas d'API externe).
+
+Usage :
+  python scanner.py                                         Scan API toutes paires
+  python scanner.py EURUSD                                  Scan API une paire
+  python scanner.py --mode manual --image sc.png --pair GBPUSD --tf H1
+  python scanner.py --mode semi-auto --pair GBPUSD
+  python scanner.py --mode batch --pair GBPUSD              Analyse toutes les captures
 """
 
+import argparse
+import json
 import os
 import sys
 import time
@@ -27,7 +41,7 @@ logging.basicConfig(
 logger = logging.getLogger("Scanner")
 
 # ──────────────────────────────────────────────────
-# CONFIGURATION — Modifie ici tes préférences
+# CONFIGURATION
 # ──────────────────────────────────────────────────
 
 PAIRS = [
@@ -77,15 +91,125 @@ TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID",   "")
 
 
+# ══════════════════════════════════════════════════════════════════════
+# MODE 1 : MANUEL — Enregistre un screenshot
+# ══════════════════════════════════════════════════════════════════════
+
+def run_manual(image_path: str, pair: str, timeframe: str, template: str = "Momentum"):
+    """
+    Enregistre un screenshot et le prépare pour analyse dans Claude Code.
+    """
+    from bot.analysis.vision_client import VisionAnalyzer
+
+    print("\n" + "=" * 55)
+    print("  ANALYSE VISUELLE — Mode Manuel")
+    print("=" * 55)
+
+    analyzer = VisionAnalyzer()
+    entry = analyzer.register_image(image_path, pair, timeframe, template)
+
+    print(f"  Image    : {entry['filename']}")
+    print(f"  Paire    : {pair}")
+    print(f"  TF       : {timeframe}")
+    print(f"  Template : {template}")
+    print(f"  Taille   : {entry['size_kb']} KB")
+    print("=" * 55)
+    print()
+    print("  Screenshot enregistré avec succes !")
+    print()
+    print("  Pour l'analyser, ouvre Claude Code et dis :")
+    print(f"  → Analyse {entry['image_path']}")
+    print(f"    C'est {pair} en {timeframe}, template {template}")
+    print()
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MODE 2 : SEMI-AUTO — Capture écran circuit complet
+# ══════════════════════════════════════════════════════════════════════
+
+def run_semi_auto(pair: str, templates: list[str] = None, timeframes: list[str] = None):
+    """
+    Capture écran Mac → circuit templates x TF → prêt pour Claude Code.
+    """
+    from bot.analysis.screenshot_capture import ScreenshotCapture
+    from bot.analysis.vision_client import VisionAnalyzer
+
+    templates = templates or ["Momentum", "RSI", "EXTREM_MONEY", "Harmoniques"]
+    timeframes = timeframes or ["M30", "H1", "H4", "D1"]
+
+    capture = ScreenshotCapture()
+    analyzer = VisionAnalyzer()
+
+    # Circuit de capture interactif
+    images = capture.capture_full_circuit(pair, templates, timeframes)
+
+    if not images:
+        print("  Aucune image capturée. Abandon.")
+        return
+
+    # Enregistrer les images
+    registered = []
+    for img in images:
+        entry = analyzer.register_image(
+            img["image_path"], img["pair"], img["timeframe"], img["template"]
+        )
+        registered.append(entry)
+
+    # Résumé
+    analyzer.print_ready_summary(registered)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MODE 3 : BATCH — Liste les screenshots prêts
+# ══════════════════════════════════════════════════════════════════════
+
+def run_batch(pair: str = None):
+    """
+    Liste tous les screenshots disponibles pour une paire.
+    """
+    from bot.analysis.vision_client import VisionAnalyzer
+
+    analyzer = VisionAnalyzer()
+    screenshots = analyzer.list_screenshots(pair)
+
+    print("\n" + "=" * 55)
+    print("  SCREENSHOTS DISPONIBLES")
+    print("=" * 55)
+
+    if not screenshots:
+        print("  Aucun screenshot trouvé dans outputs/screenshots/")
+        print("  → Utilise --mode semi-auto pour capturer")
+        print("  → Ou glisse des images dans outputs/screenshots/")
+        return
+
+    for s in screenshots:
+        print(f"  {s.get('pair', '?'):10s} | {s.get('timeframe', '?'):4s} | "
+              f"{s['size_kb']:7.1f} KB | {s['modified']} | {s['filename']}")
+
+    print("=" * 55)
+    print(f"  Total : {len(screenshots)} screenshot(s)")
+    print()
+    print("  Pour analyser dans Claude Code :")
+    if pair:
+        pair_clean = pair.replace("/", "_")
+        print(f"  → Analyse tous les screenshots {pair} dans outputs/screenshots/")
+    else:
+        print(f"  → Analyse les screenshots dans outputs/screenshots/")
+    print()
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MODE 4 : API SCAN (existant — inchangé)
+# ══════════════════════════════════════════════════════════════════════
+
 def run_scan(pairs_override=None, tfs_override=None):
     """Lance un scan complet sur toutes les paires et timeframes."""
     pairs = pairs_override if pairs_override else PAIRS
     tfs   = tfs_override   if tfs_override   else TIMEFRAMES
-    logger.info("═" * 55)
-    logger.info(f"🔍 SCAN DÉMARRÉ — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    logger.info("═" * 55)
+    logger.info("=" * 55)
+    logger.info(f"SCAN DÉMARRÉ — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    logger.info("=" * 55)
 
-    # Imports ici pour éviter les erreurs au démarrage si librairies manquantes
     try:
         from bot.data.market_feed        import MarketFeed
         from bot.detection.sr_detector   import SRDetector
@@ -104,11 +228,10 @@ def run_scan(pairs_override=None, tfs_override=None):
         from bot.output.dashboard_generator    import DashboardGenerator
         from bot.output.backtester             import Backtester
     except ImportError as e:
-        logger.error(f"❌ Import manquant : {e}")
-        logger.error("👉 Lance d'abord : pip install -r requirements.txt")
+        logger.error(f"Import manquant : {e}")
+        logger.error("Lance d'abord : pip install -r requirements.txt")
         return []
 
-    # Initialisation des modules
     feed        = MarketFeed(exchange_id=EXCHANGE)
     sr_det      = SRDetector()
     pat_det     = PatternDetector()
@@ -129,21 +252,16 @@ def run_scan(pairs_override=None, tfs_override=None):
     for pair in pairs:
         for tf in tfs:
             try:
-                logger.info(f"  📊 {pair} | {tf}")
+                logger.info(f"  {pair} | {tf}")
 
-                # 1. Données OHLCV
                 df = feed.get_ohlcv(pair, tf, limit=300)
                 if df is None or len(df) < 50:
-                    logger.warning(f"     ⚠️ Données insuffisantes")
+                    logger.warning(f"     Données insuffisantes")
                     continue
 
-                # 2. Indicateurs
                 indicators = ind_eng.compute(df)
-
-                # 3. Détection S/R
                 sr_zones = sr_det.detect(df)
 
-                # 4. Détection de patterns
                 patterns  = pat_det.detect(df, sr_zones)
                 candles   = cdl_det.detect(df, sr_zones)
                 harmonics = harm_det.detect(df, sr_zones)
@@ -151,7 +269,6 @@ def run_scan(pairs_override=None, tfs_override=None):
 
                 all_signals = patterns + candles + harmonics + compressions
 
-                # 5. Analyse HTF — logique sniper M15/M30 = on vérifie H1 ET H4
                 HTF_MAP = {
                     "15m": ("1h",  "4h"),
                     "30m": ("1h",  "4h"),
@@ -168,8 +285,6 @@ def run_scan(pairs_override=None, tfs_override=None):
                 htf2_trend = mtf.get_trend_from_data(df_htf2) if df_htf2 is not None else "NEUTRE"
 
                 for sig in all_signals:
-
-                    # Enrichir le signal avec les indicateurs
                     sig.update({
                         "pair"       : pair,
                         "timeframe"  : tf,
@@ -191,7 +306,6 @@ def run_scan(pairs_override=None, tfs_override=None):
                         "htf2_trend" : htf2_trend,
                     })
 
-                    # Multi-timeframe sniper
                     htf_result = mtf.analyze_sniper(
                         signal_tf  = tf,
                         signal_dir = sig.get("direction", "LONG"),
@@ -210,13 +324,11 @@ def run_scan(pairs_override=None, tfs_override=None):
                     sig["htf_aligned"] = htf_result.aligned
                     sig["htf_blocked"] = htf_result.blocked
 
-                    # 6. Vérification des portes
                     gate_result = gate.check(sig)
                     if not gate_result.allowed:
                         logger.debug(f"     {gate_result.reason}")
                         continue
 
-                    # 7. Calcul des niveaux d'entrée
                     sig["confluence"] = gate_result.reason
                     entry_result = calc.calculate(sig)
                     sig.update({
@@ -227,7 +339,6 @@ def run_scan(pairs_override=None, tfs_override=None):
                         "rr_ratio" : entry_result.rr_ratio,
                     })
 
-                    # 8. Dessin — Pine Script + MQL4
                     drawing = drawer_registry.draw(sig)
                     pine_path = f"outputs/tradingview/{pair.replace('/','_')}_{tf}_{sig.get('pattern','sig')}.pine"
                     mql4_path = f"outputs/mt4/{pair.replace('/','_')}_{tf}_{sig.get('pattern','sig')}.mql4"
@@ -239,8 +350,7 @@ def run_scan(pairs_override=None, tfs_override=None):
                         f.write(drawing.mql4_script)
                     sig["pine_file"] = pine_path
 
-                    # 9. Alerte
-                    qqe_status = "✅ croisement" if sig.get("qqe_fast",0) > sig.get("qqe_slow",0) else "⚠️"
+                    qqe_status = "croisement" if sig.get("qqe_fast",0) > sig.get("qqe_slow",0) else ""
                     alert = Alert(
                         pair        = pair,
                         timeframe   = tf,
@@ -265,65 +375,143 @@ def run_scan(pairs_override=None, tfs_override=None):
                     active_signals.append(sig)
 
             except Exception as e:
-                logger.error(f"     ❌ Erreur {pair} {tf} : {e}", exc_info=True)
+                logger.error(f"     Erreur {pair} {tf} : {e}", exc_info=True)
 
-    # 10. Dashboard HTML
     dashboard.generate(active_signals)
-    logger.info(f"\n✅ Scan terminé — {len(active_signals)} signaux | Dashboard: outputs/dashboard.html\n")
+    logger.info(f"\nScan terminé — {len(active_signals)} signaux | Dashboard: outputs/dashboard.html\n")
     return active_signals
 
 
 def _resolve_pair(arg: str) -> str | None:
-    """Convertit un argument CLI en paire reconnue (ex: EURUSD → EUR/USD)."""
-    # Normaliser : majuscules, sans espaces
+    """Convertit un argument CLI en paire reconnue (ex: EURUSD -> EUR/USD)."""
     arg = arg.upper().strip()
-
-    # Correspondance directe (ex: "EUR/USD")
     if arg in PAIRS:
         return arg
-
-    # Essayer d'ajouter le slash (ex: EURUSD → EUR/USD)
     for pair in PAIRS:
         if arg == pair.replace("/", ""):
             return pair
-
     return None
 
 
+# ══════════════════════════════════════════════════════════════════════
+# POINT D'ENTRÉE — ARGPARSE
+# ══════════════════════════════════════════════════════════════════════
+
 def main():
-    # ── Lecture argument CLI optionnel ────────────────────────────
+    parser = argparse.ArgumentParser(
+        description="Trading Bot Ultimate — Scanner multi-mode",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemples :
+  python scanner.py                                         Scan API toutes paires
+  python scanner.py EURUSD                                  Scan API une paire
+  python scanner.py --mode manual --image sc.png --pair GBPUSD --tf H1
+  python scanner.py --mode semi-auto --pair GBPUSD          Capture circuit MT4
+  python scanner.py --mode batch --pair GBPUSD              Liste screenshots prêts
+        """
+    )
+
+    parser.add_argument("legacy_pair", nargs="?", default=None,
+                        help="Paire pour scan API (mode legacy, ex: EURUSD)")
+    parser.add_argument("--mode", "-m",
+                        choices=["manual", "semi-auto", "batch", "api-scan"],
+                        default=None,
+                        help="Mode d'analyse")
+    parser.add_argument("--image", "-i", type=str,
+                        help="Chemin vers le screenshot (mode manual)")
+    parser.add_argument("--pair", "-p", type=str,
+                        help="Paire à analyser (ex: GBPUSD, EUR/USD)")
+    parser.add_argument("--tf", "-t", type=str, default="H1",
+                        help="Timeframe (ex: M30, H1, H4, D1)")
+    parser.add_argument("--template", type=str, default="Momentum",
+                        choices=["Momentum", "RSI", "EXTREM_MONEY", "Harmoniques"],
+                        help="Template MT4 (mode manual)")
+
+    args = parser.parse_args()
+
+    # Déterminer le mode
+    mode = args.mode
+    if mode is None:
+        if args.image:
+            mode = "manual"
+        elif args.legacy_pair:
+            mode = "api-scan"
+        else:
+            mode = "api-scan"
+
+    # ── MODE MANUAL ─────────────────────────────────────
+    if mode == "manual":
+        if not args.image:
+            parser.error("--image est requis en mode manual")
+        if not args.pair:
+            parser.error("--pair est requis en mode manual")
+
+        pair = _resolve_pair(args.pair)
+        if pair is None:
+            pair = args.pair.upper()
+            if "/" not in pair and len(pair) == 6:
+                pair = pair[:3] + "/" + pair[3:]
+
+        run_manual(args.image, pair, args.tf.upper(), args.template)
+        return
+
+    # ── MODE SEMI-AUTO ──────────────────────────────────
+    if mode == "semi-auto":
+        if not args.pair:
+            parser.error("--pair est requis en mode semi-auto")
+
+        pair = _resolve_pair(args.pair)
+        if pair is None:
+            pair = args.pair.upper()
+            if "/" not in pair and len(pair) == 6:
+                pair = pair[:3] + "/" + pair[3:]
+
+        run_semi_auto(pair)
+        return
+
+    # ── MODE BATCH ──────────────────────────────────────
+    if mode == "batch":
+        pair = None
+        if args.pair:
+            pair = _resolve_pair(args.pair)
+            if pair is None:
+                pair = args.pair.upper()
+                if "/" not in pair and len(pair) == 6:
+                    pair = pair[:3] + "/" + pair[3:]
+        run_batch(pair)
+        return
+
+    # ── MODE API-SCAN (existant) ────────────────────────
     single_pair = None
-    if len(sys.argv) > 1:
-        single_pair = _resolve_pair(sys.argv[1])
+    pair_arg = args.legacy_pair or args.pair
+
+    if pair_arg:
+        single_pair = _resolve_pair(pair_arg)
         if single_pair is None:
-            print(f"\n❌ Paire inconnue : '{sys.argv[1]}'")
+            print(f"\nPaire inconnue : '{pair_arg}'")
             print(f"   Paires disponibles : {', '.join(PAIRS)}")
-            print(f"   Exemples : python scanner.py EURUSD  |  python scanner.py XAUUSD\n")
             sys.exit(1)
 
     pairs_to_scan = [single_pair] if single_pair else PAIRS
 
-    print("\n" + "═"*55)
-    print("  🤖 TRADING BOT ULTIMATE — DÉMARRAGE")
-    print("═"*55)
+    print("\n" + "=" * 55)
+    print("  TRADING BOT ULTIMATE — DÉMARRAGE")
+    print("=" * 55)
     print(f"  Paires     : {', '.join(pairs_to_scan)}")
     print(f"  Timeframes : {', '.join(TIMEFRAMES)}")
     print(f"  Exchange   : {EXCHANGE}")
     if single_pair:
-        print(f"  Mode       : Analyse unique (une seule paire)")
+        print(f"  Mode       : Analyse unique")
     else:
         print(f"  Scan every : 15 minutes")
-    print(f"  Telegram   : {'✅' if TELEGRAM_TOKEN else '❌ Non configuré'}")
-    print("═"*55 + "\n")
+    print(f"  Telegram   : {'Activé' if TELEGRAM_TOKEN else 'Non configuré'}")
+    print("=" * 55 + "\n")
 
-    # Lancer le scan
     run_scan(pairs_override=pairs_to_scan)
 
-    # En mode analyse unique → on s'arrête là
     if single_pair:
         return
 
-    # En mode complet → boucle toutes les 15 minutes
     schedule.every(15).minutes.do(run_scan)
     while True:
         schedule.run_pending()

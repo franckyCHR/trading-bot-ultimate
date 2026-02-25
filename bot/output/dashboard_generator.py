@@ -102,6 +102,25 @@ class DashboardGenerator:
   .bt-box .val {{ font-size: 22px; font-weight: bold; }}
   .bt-box .lbl {{ font-size: 11px; color: #8b949e; margin-top: 4px; }}
   .green {{ color: #3fb950; }} .red {{ color: #f85149; }} .blue {{ color: #58a6ff; }}
+  /* Visual analysis cards */
+  .visual-card {{ border-left: 3px solid #bc8cff; }}
+  .visual-card .card-header {{ position: relative; }}
+  .score-badge {{
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-size: 14px; font-weight: bold; margin-left: 8px;
+  }}
+  .score-high {{ background: #1a3a1a; color: #3fb950; }}
+  .score-mid  {{ background: #2a2a1f; color: #e3b341; }}
+  .score-low  {{ background: #3a1a1a; color: #f85149; }}
+  .thumbnail {{
+    width: 100%; max-height: 160px; object-fit: cover;
+    border-radius: 6px; margin-bottom: 10px; border: 1px solid #30363d;
+  }}
+  .summary {{ font-size: 12px; color: #8b949e; margin-top: 8px; line-height: 1.4; }}
+  .warnings {{ font-size: 11px; color: #e3b341; margin-top: 6px; }}
+  .gate-badge {{ display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }}
+  .gate-ok {{ background: #1a3a1a; color: #3fb950; }}
+  .gate-fail {{ background: #3a1a1a; color: #f85149; }}
 </style>
 </head>
 <body>
@@ -127,6 +146,85 @@ class DashboardGenerator:
 </body></html>"""
 
     def _signal_card(self, s: dict) -> str:
+        # Detect visual analysis type
+        is_visual = s.get("analysis_type") == "visual"
+
+        if is_visual:
+            return self._visual_signal_card(s)
+        return self._api_signal_card(s)
+
+    def _visual_signal_card(self, s: dict) -> str:
+        """Card spéciale pour les analyses visuelles avec thumbnail + score."""
+        direction  = s.get("direction", "NEUTRAL")
+        pattern    = s.get("pattern", "Visual Analysis")
+        pair       = s.get("pair", "—")
+        tf         = s.get("timeframe", "—")
+        entry      = s.get("entry", 0)
+        sl         = s.get("sl") or s.get("stop_loss", 0)
+        tp1        = s.get("tp1", 0)
+        tp2        = s.get("tp2", 0)
+        rr         = s.get("rr_ratio", 0)
+        score      = s.get("confluence_score", 0)
+        summary    = s.get("summary", "")
+        warnings   = s.get("warnings", [])
+        timestamp  = s.get("timestamp", "")
+        meta       = s.get("_meta", {})
+        image_path = meta.get("image_path", "")
+        template   = meta.get("template", "")
+
+        dir_class = "direction-long" if direction == "LONG" else "direction-short"
+        dir_emoji = "LONG" if direction == "LONG" else "SHORT" if direction == "SHORT" else "NEUTRAL"
+
+        score_class = "score-high" if score >= 7 else "score-mid" if score >= 5 else "score-low"
+
+        # Gate badges
+        g1 = s.get("gate1_sr", {})
+        g2 = s.get("gate2_pattern", {})
+        g1_class = "gate-ok" if g1.get("found") else "gate-fail"
+        g2_class = "gate-ok" if g2.get("found") else "gate-fail"
+        g1_text = "S/R" if g1.get("found") else "S/R"
+        g2_text = "Pattern" if g2.get("found") else "Pattern"
+
+        # Thumbnail
+        thumb_html = ""
+        if image_path:
+            # Use relative path for screenshots served by webapp
+            fname = os.path.basename(image_path) if image_path else ""
+            thumb_html = f'<img class="thumbnail" src="/screenshots/{fname}" alt="screenshot" onerror="this.style.display=\'none\'">'
+
+        # Warnings
+        warn_html = ""
+        if warnings:
+            warn_html = f'<div class="warnings">{"<br>".join(warnings)}</div>'
+
+        return f"""
+<div class="card visual-card">
+  <div class="card-header">
+    <div>
+      <div class="pattern">{pattern}
+        <span class="score-badge {score_class}">{score}/10</span>
+      </div>
+      <div class="pair">{pair} | {tf} | {template} | {timestamp}</div>
+    </div>
+    <span class="{dir_class}">{dir_emoji}</span>
+  </div>
+  {thumb_html}
+  <div style="margin-bottom:8px">
+    <span class="gate-badge {g1_class}">P1 {g1_text}</span>
+    <span class="gate-badge {g2_class}">P2 {g2_text}</span>
+  </div>
+  <div class="prices">
+    <div class="price-box entry"><div class="label">ENTRÉE</div><div class="value">{entry:,.4f}</div></div>
+    <div class="price-box sl"><div class="label">SL</div><div class="value">{sl:,.4f}</div></div>
+    <div class="price-box tp1"><div class="label">TP1</div><div class="value">{tp1:,.4f}</div></div>
+    <div class="price-box tp2"><div class="label">TP2</div><div class="value">{tp2:,.4f}</div></div>
+  </div>
+  <div class="summary">{summary}</div>
+  {warn_html}
+</div>"""
+
+    def _api_signal_card(self, s: dict) -> str:
+        """Card originale pour les signaux API (yfinance)."""
         direction  = s.get("direction", "LONG")
         pattern    = s.get("pattern", "—")
         pair       = s.get("pair", "—")
@@ -144,37 +242,37 @@ class DashboardGenerator:
         timestamp  = s.get("timestamp", "")
 
         dir_class = "direction-long" if direction == "LONG" else "direction-short"
-        dir_emoji = "⬆️ LONG" if direction == "LONG" else "⬇️ SHORT"
+        dir_emoji = "LONG" if direction == "LONG" else "SHORT"
 
-        tags = f'<span class="tag tag-sr">📍 S/R</span>'
+        tags = f'<span class="tag tag-sr">S/R</span>'
         if adx >= 25:
-            tags += f'<span class="tag tag-adx">ADX {round(adx,0)} ✅</span>'
+            tags += f'<span class="tag tag-adx">ADX {round(adx,0)}</span>'
         elif adx >= 20:
-            tags += f'<span class="tag tag-adx">ADX {round(adx,0)} ⚠️</span>'
-        if "✅" in qqe_status:
-            tags += f'<span class="tag tag-qqe">QQE ✅</span>'
+            tags += f'<span class="tag tag-adx">ADX {round(adx,0)}</span>'
+        if "croisement" in qqe_status:
+            tags += f'<span class="tag tag-qqe">QQE</span>'
         if compression:
-            tags += f'<span class="tag tag-compression">🔥 Compression</span>'
+            tags += f'<span class="tag tag-compression">Compression</span>'
         if htf_label:
             tags += f'<span class="tag tag-htf">HTF: {htf_label[:20]}</span>'
         tags += f'<span class="tag tag-rr">RR 1:{rr}</span>'
 
-        pine_html = f'<a class="pine-link" href="{pine_file}" target="_blank">📄 Ouvrir Pine Script</a>' if pine_file else ""
+        pine_html = f'<a class="pine-link" href="{pine_file}" target="_blank">Pine Script</a>' if pine_file else ""
 
         return f"""
 <div class="card">
   <div class="card-header">
     <div>
-      <div class="pattern">{'🔥 ' if compression else ''}{pattern}</div>
+      <div class="pattern">{pattern}</div>
       <div class="pair">{pair} | {tf} | {timestamp}</div>
     </div>
     <span class="{dir_class}">{dir_emoji}</span>
   </div>
   <div class="prices">
-    <div class="price-box entry"><div class="label">⬆️/⬇️ ENTRÉE</div><div class="value">{entry:,.4f}</div></div>
-    <div class="price-box sl"><div class="label">🔴 SL</div><div class="value">{sl:,.4f}</div></div>
-    <div class="price-box tp1"><div class="label">🟠 TP1</div><div class="value">{tp1:,.4f}</div></div>
-    <div class="price-box tp2"><div class="label">🟢 TP2</div><div class="value">{tp2:,.4f}</div></div>
+    <div class="price-box entry"><div class="label">ENTRÉE</div><div class="value">{entry:,.4f}</div></div>
+    <div class="price-box sl"><div class="label">SL</div><div class="value">{sl:,.4f}</div></div>
+    <div class="price-box tp1"><div class="label">TP1</div><div class="value">{tp1:,.4f}</div></div>
+    <div class="price-box tp2"><div class="label">TP2</div><div class="value">{tp2:,.4f}</div></div>
   </div>
   <div class="tags">{tags}</div>
   {pine_html}

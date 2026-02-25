@@ -9,15 +9,22 @@ Endpoints :
   POST /api/scan              → démarre un scan (background), retourne scan_id
   GET  /api/stream/<scan_id>  → SSE : logs en temps réel
   GET  /api/results/<scan_id> → JSON : signaux détectés
+  GET  /api/chart             → données OHLCV pour graphique
   GET  /pine/<filename>       → sert les fichiers Pine Script
+  POST /api/analyze-image     → upload screenshot → analyse visuelle
+  GET  /api/analysis/<id>     → résultats d'une analyse visuelle
+  GET  /api/screenshots       → liste des screenshots
+  GET  /screenshots/<file>    → sert les images screenshots
 """
 
 import os
 import uuid
+import json
 import queue
 import logging
 import threading
 from datetime import datetime
+from pathlib import Path
 
 from flask import Flask, render_template, request, jsonify, Response, send_file, abort
 
@@ -26,7 +33,6 @@ app  = Flask(__name__)
 PORT = int(os.environ.get("PORT", 8080))
 
 # ── Config paires/timeframes (copiée depuis scanner.py) ───────────────────────
-# Défini ici pour éviter d'importer scanner.py au démarrage (évite erreurs d'import)
 PAIRS = [
     "EUR/USD", "GBP/USD", "USD/JPY", "USD/CHF", "AUD/USD", "USD/CAD",
     "EUR/GBP", "EUR/JPY", "GBP/JPY",
@@ -37,8 +43,8 @@ PAIRS = [
 TIMEFRAMES = ["30m", "1h", "4h"]
 
 # ── Stockage des scans en mémoire ─────────────────────────────────────────────
-# { scan_id: { "status": str, "signals": list, "log_queue": Queue, "started_at": str } }
 SCANS: dict = {}
+ANALYSES: dict = {}  # Analyses visuelles
 
 logging.basicConfig(
     level  = logging.INFO,
@@ -62,7 +68,7 @@ class QueueHandler(logging.Handler):
         try:
             self.log_queue.put_nowait(self.format(record))
         except queue.Full:
-            pass  # Ne jamais bloquer le scanner pour un log
+            pass
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -80,14 +86,9 @@ def index():
 
 @app.route("/api/scan", methods=["POST"])
 def start_scan():
-    """
-    Démarre un scan en arrière-plan.
-    Body JSON : { "pairs": ["EUR/USD"], "timeframes": ["1h", "4h"] }
-    Retourne  : { "scan_id": "..." }
-    """
     data   = request.get_json(silent=True) or {}
-    pairs  = data.get("pairs", [])       or None   # None = toutes les paires
-    tfs    = data.get("timeframes", [])  or None   # None = tous les TF par défaut
+    pairs  = data.get("pairs", [])       or None
+    tfs    = data.get("timeframes", [])  or None
 
     scan_id = str(uuid.uuid4())
     SCANS[scan_id] = {
@@ -107,7 +108,6 @@ def start_scan():
 
 
 def _run_scan_thread(scan_id: str, pairs_override, tfs_override):
-    """Thread secondaire : lance le scan et capture les logs."""
     log_queue = SCANS[scan_id]["log_queue"]
 
     handler = QueueHandler(log_queue)
@@ -133,7 +133,7 @@ def _run_scan_thread(scan_id: str, pairs_override, tfs_override):
 
     finally:
         root.removeHandler(handler)
-        log_queue.put(None)   # sentinelle : fin du stream SSE
+        log_queue.put(None)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -150,20 +150,20 @@ def stream_logs(scan_id: str):
         while True:
             try:
                 msg = log_queue.get(timeout=30)
-                if msg is None:                  # sentinelle → scan terminé
+                if msg is None:
                     yield "data: __SCAN_DONE__\n\n"
                     break
-                safe = msg.replace("\n", " ")    # SSE n'accepte pas les \n dans data
+                safe = msg.replace("\n", " ")
                 yield f"data: {safe}\n\n"
             except queue.Empty:
-                yield "data: __HEARTBEAT__\n\n"  # keepalive
+                yield "data: __HEARTBEAT__\n\n"
 
     return Response(
         generate(),
         mimetype = "text/event-stream",
         headers  = {
             "Cache-Control"    : "no-cache",
-            "X-Accel-Buffering": "no",           # désactive le buffering Nginx
+            "X-Accel-Buffering": "no",
         },
     )
 
@@ -201,6 +201,8 @@ def get_results(scan_id: str):
             "zone_high"  : round(float(s.get("zone_high") or s.get("resistance_level") or s.get("tp2") or 0), 5),
             "zone_low"   : round(float(s.get("zone_low")  or s.get("support_level")   or s.get("sl")  or 0), 5),
             "confluence" : s.get("confluence", ""),
+            "analysis_type": s.get("analysis_type", "api"),
+            "confluence_score": s.get("confluence_score", 0),
         })
 
     return jsonify({
@@ -219,10 +221,6 @@ def get_results(scan_id: str):
 
 @app.route("/api/chart")
 def get_chart_data():
-    """
-    Retourne les bougies OHLCV d'une paire/TF pour le graphique.
-    Params : ?pair=EUR/USD&timeframe=1h
-    """
     pair      = request.args.get("pair", "EUR/USD")
     timeframe = request.args.get("timeframe", "1h")
 
@@ -236,7 +234,6 @@ def get_chart_data():
     candles = []
     for _, row in df.iterrows():
         ts = row["timestamp"]
-        # Lightweight Charts attend un timestamp Unix (secondes)
         if hasattr(ts, "timestamp"):
             t = int(ts.timestamp())
         else:
@@ -254,12 +251,149 @@ def get_chart_data():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# API — ANALYSE VISUELLE (upload screenshot)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/analyze-image", methods=["POST"])
+def analyze_image():
+    """
+    Upload un screenshot → sauvegarde dans outputs/screenshots/.
+    L'analyse se fait ensuite dans Claude Code (pas d'API externe).
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "Pas de fichier uploadé"}), 400
+
+    file = request.files["file"]
+    pair = request.form.get("pair", "EUR/USD")
+    timeframe = request.form.get("timeframe", "H1")
+    template = request.form.get("template", "Momentum")
+
+    if not file.filename:
+        return jsonify({"error": "Fichier vide"}), 400
+
+    # Sauvegarder l'image
+    os.makedirs("outputs/screenshots", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    pair_clean = pair.replace("/", "_")
+    ext = Path(file.filename).suffix or ".png"
+    filename = f"{pair_clean}_{timeframe}_{template}_{ts}{ext}"
+    filepath = os.path.join("outputs/screenshots", filename)
+    file.save(filepath)
+
+    # Enregistrer dans la liste des analyses
+    analysis_id = str(uuid.uuid4())
+    ANALYSES[analysis_id] = {
+        "status": "saved",
+        "image": filename,
+        "filepath": filepath,
+        "pair": pair,
+        "timeframe": timeframe,
+        "template": template,
+        "saved_at": datetime.now().strftime("%H:%M:%S"),
+    }
+
+    logger.info(f"Screenshot uploadé : {filename}")
+
+    return jsonify({
+        "analysis_id": analysis_id,
+        "image": filename,
+        "message": f"Screenshot sauvegardé. Pour analyser, ouvre Claude Code et dis : Analyse {filepath}",
+    }), 201
+
+
+@app.route("/api/analysis/<analysis_id>")
+def get_analysis(analysis_id: str):
+    """Retourne les infos d'un screenshot uploadé."""
+    if analysis_id not in ANALYSES:
+        return jsonify({"error": "analysis_id inconnu"}), 404
+
+    a = ANALYSES[analysis_id]
+    return jsonify({
+        "analysis_id": analysis_id,
+        "status": a.get("status", "saved"),
+        "image": a.get("image", ""),
+        "filepath": a.get("filepath", ""),
+        "pair": a.get("pair", ""),
+        "timeframe": a.get("timeframe", ""),
+        "template": a.get("template", ""),
+        "saved_at": a.get("saved_at", ""),
+        "message": "Analyse via Claude Code : ouvre le terminal et demande l'analyse de ce screenshot",
+    })
+
+
+@app.route("/api/analyses")
+def list_analyses():
+    """Liste toutes les analyses visuelles sauvegardées en JSON."""
+    analyses_dir = Path("outputs/analyses")
+    if not analyses_dir.exists():
+        return jsonify({"analyses": []})
+
+    results = []
+    for f in sorted(analyses_dir.glob("*.json"), reverse=True):
+        try:
+            with open(f) as fh:
+                data = json.load(fh)
+            data["_filename"] = f.name
+            results.append(data)
+        except (json.JSONDecodeError, OSError):
+            continue
+
+    return jsonify({"analyses": results, "count": len(results)})
+
+
+@app.route("/api/analyses/clear", methods=["POST"])
+def clear_analyses():
+    """Supprime toutes les analyses (reset)."""
+    analyses_dir = Path("outputs/analyses")
+    count = 0
+    if analyses_dir.exists():
+        for f in analyses_dir.glob("*.json"):
+            f.unlink()
+            count += 1
+    return jsonify({"deleted": count})
+
+
+@app.route("/api/screenshots")
+def list_screenshots():
+    """Liste les screenshots disponibles."""
+    screenshots_dir = Path("outputs/screenshots")
+    if not screenshots_dir.exists():
+        return jsonify({"screenshots": []})
+
+    files = []
+    for f in sorted(screenshots_dir.glob("*.png"), reverse=True):
+        files.append({
+            "filename": f.name,
+            "size_kb": round(f.stat().st_size / 1024, 1),
+            "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+        })
+    # Also include jpg/jpeg
+    for f in sorted(screenshots_dir.glob("*.jp*g"), reverse=True):
+        files.append({
+            "filename": f.name,
+            "size_kb": round(f.stat().st_size / 1024, 1),
+            "modified": datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+        })
+
+    return jsonify({"screenshots": files})
+
+
+@app.route("/screenshots/<path:filename>")
+def serve_screenshot(filename: str):
+    """Sert les fichiers screenshots."""
+    safe_name = os.path.basename(filename)
+    full_path = os.path.join("outputs", "screenshots", safe_name)
+    if not os.path.isfile(full_path):
+        abort(404)
+    return send_file(full_path)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # FICHIERS PINE SCRIPT
 # ══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/pine/<path:filepath>")
 def serve_pine(filepath: str):
-    # Sécurité : empêcher le path traversal
     safe_name = os.path.basename(filepath)
     full_path = os.path.join("outputs", "tradingview", safe_name)
     if not os.path.isfile(full_path):
@@ -274,10 +408,12 @@ def serve_pine(filepath: str):
 if __name__ == "__main__":
     os.makedirs("outputs/tradingview", exist_ok=True)
     os.makedirs("outputs/mt4",        exist_ok=True)
+    os.makedirs("outputs/screenshots", exist_ok=True)
+    os.makedirs("outputs/analyses",   exist_ok=True)
 
-    print(f"\n{'═'*50}")
-    print(f"  🌐 Trading Bot Web — http://localhost:{PORT}")
+    print(f"\n{'='*50}")
+    print(f"  Trading Bot Web — http://localhost:{PORT}")
     print(f"  (Si erreur port, essaie : PORT=9000 python webapp.py)")
-    print(f"{'═'*50}\n")
+    print(f"{'='*50}\n")
 
     app.run(host="0.0.0.0", port=PORT, threaded=True, debug=False)

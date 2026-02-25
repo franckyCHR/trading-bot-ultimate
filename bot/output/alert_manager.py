@@ -131,6 +131,75 @@ ADX: `{a.adx}` | QQE: `{a.qqe_status}`
         except Exception as e:
             logger.error(f"❌ Telegram exception : {e}")
 
+    def send_visual_analysis(self, analysis: dict, image_path: str = ""):
+        """
+        Envoie une alerte Telegram pour analyse visuelle avec photo jointe.
+        Seulement si score >= 6.
+        """
+        score = analysis.get("confluence_score", 0)
+        direction = analysis.get("direction", "NEUTRAL")
+        pair = analysis.get("pair", "?")
+        tf = analysis.get("timeframe", "?")
+        pattern = analysis.get("pattern", "Visual Analysis")
+        summary = analysis.get("summary", "")
+        entry = analysis.get("entry", 0)
+        sl = analysis.get("sl", 0)
+        tp1 = analysis.get("tp1", 0)
+        tp2 = analysis.get("tp2", 0)
+        rr = analysis.get("rr_ratio", 0)
+        warnings = analysis.get("warnings", [])
+
+        if score < 6:
+            return
+
+        emoji = "\u2b06\ufe0f" if direction == "LONG" else "\u2b07\ufe0f"
+        score_emoji = "\U0001f3c6" if score >= 9 else "\u2705\u2705" if score >= 7 else "\u2705"
+
+        message = (
+            f"\U0001f4f8 *ANALYSE VISUELLE*\n\n"
+            f"{emoji} *{pattern}* | `{pair}` | `{tf}`\n"
+            f"{score_emoji} *Score : {score}/10*\n\n"
+        )
+
+        if entry:
+            message += (
+                f"\U0001f4cd *ENTRÉE*  : `{entry:,.4f}`\n"
+                f"\U0001f534 *SL*      : `{sl:,.4f}`\n"
+                f"\U0001f7e0 *TP1*     : `{tp1:,.4f}`\n"
+                f"\U0001f7e2 *TP2*     : `{tp2:,.4f}`  _(RR 1:{rr})_\n\n"
+            )
+
+        message += f"\U0001f4dd {summary}"
+
+        if warnings:
+            message += f"\n\n\u26a0\ufe0f {', '.join(warnings)}"
+
+        if not self.tg_enabled or not REQUESTS_OK:
+            return
+
+        try:
+            # Si image disponible, envoyer comme photo
+            if image_path and os.path.isfile(image_path):
+                url = f"https://api.telegram.org/bot{self.tg_token}/sendPhoto"
+                with open(image_path, "rb") as f:
+                    requests.post(url, data={
+                        "chat_id": self.tg_chat_id,
+                        "caption": message,
+                        "parse_mode": "Markdown",
+                    }, files={"photo": f}, timeout=30)
+            else:
+                # Pas d'image, envoyer comme texte
+                url = f"https://api.telegram.org/bot{self.tg_token}/sendMessage"
+                requests.post(url, json={
+                    "chat_id": self.tg_chat_id,
+                    "text": message,
+                    "parse_mode": "Markdown",
+                }, timeout=10)
+
+            logger.info(f"Telegram visual analysis envoyé : {pair} {tf} score={score}")
+        except Exception as e:
+            logger.error(f"Telegram visual analysis erreur : {e}")
+
     def send_pine_script(self, pair: str, tf: str, pine_path: str):
         """Envoie le fichier Pine Script sur Telegram."""
         if not self.tg_enabled or not REQUESTS_OK:
